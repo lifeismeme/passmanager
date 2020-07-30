@@ -88,6 +88,29 @@ namespace PassManager
 			}
 
 		}
+		public static void encrypt(Stream input, Stream output, byte[] Key)
+		{
+			const int blockSize = 16;
+			byte[] IV = new byte[blockSize];
+			using(var random = new RNGCryptoServiceProvider())
+				random.GetBytes(IV);
+			
+			output.Write(IV, 0, blockSize);
+			encrypt(input, output, Key, IV);
+		}
+
+		public static void decrypt(Stream input, Stream output, byte[] Key)
+		{
+			const int blockSize = 16;
+			byte[] IV = new byte[blockSize];
+			
+			//first 16bytes is the stored IV
+			int bytesRead = input.Read(IV, 0, blockSize);
+			if (bytesRead != 16)
+				throw new FileFormatException("cannot read first 16 bytes, possibility invalid file");
+
+			decrypt(input, output, Key, IV);
+		}
 
 		public static void encrypt(Stream input, Stream output, byte[] Key, byte[] IV)
 		{
@@ -118,7 +141,6 @@ namespace PassManager
 			}
 
 		}
-
 
 		public static void decrypt(Stream input, Stream output, byte[] Key, byte[] IV)
 		{

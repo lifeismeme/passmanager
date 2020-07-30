@@ -22,6 +22,20 @@ namespace PassManager
 		{
 			Creation = DateTime.Now;
 		}
+		public static Credential CreateNew()
+		{
+			DateTime now = DateTime.Now;
+			return new Credential()
+			{
+				Id = 1,
+				Title = "",
+				Username = "",
+				Password = new char[0],
+				Description = "",
+				Creation = now,
+				LastModified = now
+			};
+		}
 		private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
 		{
 			lastModified = DateTime.Now;
@@ -44,16 +58,13 @@ namespace PassManager
 			if (base.Equals(obj))
 				return true;
 			var c = obj as Credential;
-			if (c.Id == Id
+			return (c.Id == Id
 				&& c.Title == Title
 				&& c.Username == username
 				&& Enumerable.SequenceEqual(c.Password, Password)
 				&& c.Description == Description
 				&& DateTime.Equals(c.Creation, Creation)
-				&& DateTime.Equals(c.LastModified, LastModified))
-				return true;
-
-			return false;
+				&& DateTime.Equals(c.LastModified, LastModified));
 		}
 
 		public override int GetHashCode()

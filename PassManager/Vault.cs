@@ -39,11 +39,8 @@ namespace PassManager
 				if (!en.Current.Equals(this[i]))
 					return false;
 			}
-
-			if (!en.MoveNext() && i == count)
-				return true;
-			else
-				return false;
+		
+			return (!en.MoveNext() && i == count);
 		}
 
 		public override int GetHashCode()
