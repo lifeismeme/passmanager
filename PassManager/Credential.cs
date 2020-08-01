@@ -8,24 +8,24 @@ using System.Threading.Tasks;
 
 namespace PassManager
 {
-	public class Vault : INotifyPropertyChanged, IComparable<Vault>
+	public class Credential : INotifyPropertyChanged, IComparable<Credential>
 	{
 		private int id;
 		private string title;
 		private string username;
-		private char[] password = new char[0];
+		private char[] password;
 		private string description;
 		private DateTime creation;
 		private DateTime lastModified;
 
-		public Vault()
+		public Credential()
 		{
 			Creation = DateTime.Now;
 		}
-		public static Vault CreateNew()
+		public static Credential CreateNew()
 		{
 			DateTime now = DateTime.Now;
-			return new Vault()
+			return new Credential()
 			{
 				Id = 1,
 				Title = "",
@@ -42,7 +42,7 @@ namespace PassManager
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 
-		public int CompareTo(Vault other)
+		public int CompareTo(Credential other)
 		{
 			var otherId = other.Id;
 			if (id == otherId)
@@ -57,7 +57,7 @@ namespace PassManager
 		{
 			if (base.Equals(obj))
 				return true;
-			var c = obj as Vault;
+			var c = obj as Credential;
 			return (c.Id == Id
 				&& c.Title == Title
 				&& c.Username == username

@@ -9,69 +9,67 @@ using System.Collections;
 
 namespace PassManager
 {
-	public class Vault<T> : IEnumerable<T>
+	public class Vault<T> 
 	{
-
 		public DateTime Creation { get; set; }
 		public DateTime LastModified { get; set; }
 		public string Sha256sum { get; set; }
-		public List<T> Credentials { get; set; }
-		public int Count { get { return Credentials.Count; } }
+		public int Count { get { return Items.Count; } }
+		public Dictionary<string, T> Items { get; set; } //<id, Item> 
+		//serializing Dictionary<?,?> to json can be either string or Object with public properties only, other types in an Dictionary/Hastable are not supported to be serialize to json.
+		
+		public void Add(T item)
+		{
+			int id = Items.Count +1; 
+			while (Items.ContainsKey(id.ToString() ))
+			{
+				id += 1;
+			}
+
+			Items.Add(id.ToString() , item);
+		}
+
 		public Vault()
 		{
 			DateTime NOW = DateTime.Now;
 			Creation = NOW;
 			LastModified = NOW;
 			Sha256sum = null;
-			Credentials = new List<T>();
-		}
-		public static Vault<T> CreateNew()
-		{
-			DateTime NOW = DateTime.Now;
-			return new Vault<T>() {
-				Creation = NOW,
-				LastModified = NOW,
-				Sha256sum = null,
-				Credentials = new List<T>()
-			};
+			Items = new Dictionary<string, T>();
 		}
 
-		public void Add(T item)
+		public IEnumerator<KeyValuePair<string, T>> GetEnumerator()
 		{
-			Credentials.Add(item);
+			return Items.GetEnumerator();
 		}
+
+		public static Vault<T> CreateNew()
+		{
+			return new Vault<T>();
+		}
+
 		
 		public override bool Equals(object obj)
 		{
 			if (base.Equals(obj))
 				return true;
 
-			var vault = (Vault<T>)obj;
-			IOrderedEnumerable<T> sortedVault = from c in vault
-												orderby c
-												select c;
-			var Credentials = this.Credentials;
-			int count = Credentials.Count;
-			var en = sortedVault.GetEnumerator();
-			int i = 0;
-			for (; en.MoveNext() && i < count; ++i)
+			var theirItems = ((Vault<T>)obj).Items;
+			var smallerSet = theirItems.Count < Items.Count ? theirItems : Items;
+			var largerSet = theirItems.Count > Items.Count ? theirItems : Items;
+			foreach (var i in smallerSet)
 			{
-				if (!en.Current.Equals(Credentials[i]))
-					return false;
+				T item;
+				if (largerSet.TryGetValue(i.Key, out item))
+					if (item.Equals(i.Value))
+						return true;
 			}
 
-			return (!en.MoveNext() && i == count);
+			return false;
 		}
 
-		public IEnumerator<T> GetEnumerator()
-		{
-			return Credentials.GetEnumerator();
-		}
-
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return Credentials.GetEnumerator();
-		}
+		
+ 
 
 		public override int GetHashCode()
 		{
@@ -81,7 +79,5 @@ namespace PassManager
 			hashCode *= -1521134295 + EqualityComparer<string>.Default.GetHashCode(Sha256sum);
 			return hashCode;
 		}
-
-
 	}
 }

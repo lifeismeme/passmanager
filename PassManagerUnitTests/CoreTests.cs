@@ -10,30 +10,30 @@ namespace PassManagerUnitTests
 	public class CoreTests
 	{
 		private readonly static DateTime NOW = DateTime.Now;
-		private static Vault<Vault> sampleVault()
+		private static Vault<Credential> sampleVault()
 		{
-			return new Vault<Vault>() {
-				new Vault()
-				{
-					Id =1,
-					Title="xx new tittle",
-					Username="xx username",
-					Password=new char[]{'p','@','S','s','W','0','r','d','?'},
-					Description="some description....",
-					Creation=NOW,
-					LastModified = NOW
-				},
-				new Vault()
-				{
-					Id =2,
-					Title="xx new tittle2",
-					Username="xx username2",
-					Password=new char[]{'x','@','2','s','W','0','r','d','?'},
-					Description="some description2....",
-					Creation = NOW,
-					LastModified = NOW
-				}
-			};
+			var v = new Vault<Credential>();
+			v.Add(new Credential()
+			{
+				Id = 1,
+				Title = "xx new tittle",
+				Username = "xx username",
+				Password = new char[] { 'p', '@', 'S', 's', 'W', '0', 'r', 'd', '?' },
+				Description = "some description....",
+				Creation = NOW,
+				LastModified = NOW
+			});
+			v.Add(new Credential()
+			{
+				Id = 2,
+				Title = "xx new tittle2",
+				Username = "xx username2",
+				Password = new char[] { 'x', '@', '2', 's', 'W', '0', 'r', 'd', '?' },
+				Description = "some description2....",
+				Creation = NOW,
+				LastModified = NOW
+			});
+			return v;
 		}
 		const string fileName = "hello.txt";
 		const string path = @"C:\Users\mlcmi\Desktop\passmanager\output\" + fileName;
@@ -47,7 +47,7 @@ namespace PassManagerUnitTests
 				Core.serializeToJson(vault, path);
 				Assert.IsTrue(File.Exists(path));
 
-				var savedVault = Core.deserializeJson<Vault>(path);
+				var savedVault = Core.deserializeJson<Credential>(path);
 				Assert.AreEqual(vault, savedVault);
 			}
 			catch (Exception ex)
@@ -65,7 +65,7 @@ namespace PassManagerUnitTests
 			{
 				Assert.IsTrue(File.Exists(path));
 
-				var savedVault = Core.deserializeJson<Vault>(path);
+				var savedVault = Core.deserializeJson<Credential>(path);
 
 				Assert.AreEqual(sampleV, savedVault);
 			}
@@ -77,7 +77,7 @@ namespace PassManagerUnitTests
 
 
 
-			const string pathEnc = path + ".encrypted.txt";
+		const string pathEnc = path + ".encrypted.txt";
 		[TestMethod]
 		public void Encrypt()
 		{

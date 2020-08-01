@@ -10,7 +10,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void TestMethod1()
 		{
-			var credentials= new Vault<Vault>();
+			var credentials= new Vault<Credential>();
 			
 		}
 	}

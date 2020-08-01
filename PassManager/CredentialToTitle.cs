@@ -18,7 +18,7 @@ namespace PassManager
 			var e = list.GetEnumerator();
 			while (e.MoveNext())
 			{
-				titles.Add(((Vault)e.Current).Title);
+				titles.Add(((Credential)e.Current).Title);
 			}
 
 			return titles;

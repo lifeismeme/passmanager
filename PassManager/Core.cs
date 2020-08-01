@@ -176,7 +176,6 @@ namespace PassManager
 		{
 			var x = new JsonSerializerOptions();
 			x.WriteIndented = true;
-			x.Converters.Add(new VaultConverter());
 			string json = JsonSerializer.Serialize(data,x);
 			File.WriteAllText(path, json);
 		}

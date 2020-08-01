@@ -17,7 +17,7 @@ namespace PassManager
 	/// 
 	public partial class VaultWindow : Window
 	{
-		private Vault selectedCredential = null;
+		private Credential selectedCredential = null;
 
 		private ViewModel ViewModel { get; set; } = new ViewModel();
 
@@ -63,7 +63,7 @@ namespace PassManager
 			if (e == null)
 				return;
 
-			foreach (Vault c in e.NewItems)
+			foreach (Credential c in e.NewItems)
 				lstTitle.Items.Add(c);
 		}
 
@@ -75,16 +75,18 @@ namespace PassManager
 			lstTitle.Items.Clear();
 			if (titleSearch == string.Empty)
 			{
-				foreach (Vault c in ViewModel.Vault)
+				foreach (var item in ViewModel.Vault)
 				{
+					var c = item.Value;
 					lstTitle.Items.Add(c);
 				}
 			}
 			else
 			{
 				lstTitle.Items.Clear();
-				foreach (Vault c in ViewModel.Vault)
+				foreach (var item in ViewModel.Vault)
 				{
+					var c = item.Value;
 					string title = c.Title.ToLower();
 					if (title.Contains(titleSearch) || titleSearch.Contains(title))
 						lstTitle.Items.Add(c);
@@ -126,9 +128,9 @@ namespace PassManager
 
 			setEditable(false);
 
-			selectedCredential = (Vault)lstTitle.SelectedItem;
+			selectedCredential = (Credential)lstTitle.SelectedItem;
 
-			Vault c = selectedCredential;
+			Credential c = selectedCredential;
 			txtTitle.Text = c.Title;
 			txtUsername.Text = c.Username;
 			txtPassword.Text = new String(c.Password);
@@ -156,7 +158,7 @@ namespace PassManager
 
 		private void setChangesToSelectedCredential()
 		{
-			Vault c = selectedCredential;
+			Credential c = selectedCredential;
 			c.Title = txtTitle.Text.Trim();
 			c.Username = txtUsername.Text.Trim();
 			c.Password = txtPassword.Text.Trim().ToCharArray();
@@ -174,8 +176,8 @@ namespace PassManager
 				SelectedItemState.ResetState();
 			}
 			setEditable(false);
-			int id = ViewModel.Vault.Credentials.Count;
-			ViewModel.Vault.Add(new Vault()
+			int id = ViewModel.Vault.Count;
+			ViewModel.Vault.Add(new Credential()
 			{
 				Id = id,
 				Title = $"-New Title id ({id})-",

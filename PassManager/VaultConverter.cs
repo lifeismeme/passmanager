@@ -10,15 +10,15 @@ using System.Threading.Tasks;
 
 namespace PassManager
 {
-	class VaultConverter : JsonConverter<Vault>
+	class VaultConverter : JsonConverter<Credential>
 	{
-		public override Vault Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+		public override Credential Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 		{
 			throw new NotImplementedException();
 		}
 
  
-		public override void Write(Utf8JsonWriter w, Vault v, JsonSerializerOptions options)
+		public override void Write(Utf8JsonWriter w, Credential v, JsonSerializerOptions options)
 		{
 			w.WriteStartObject();
 			w.WritePropertyName("Id");
