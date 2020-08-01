@@ -48,7 +48,7 @@ namespace PassManager
 				{
 					using (var output = new BufferedStream(new FileStream(dest, FileMode.Create)))
 					{
-						Core.encrypt(input, output, Encoding.ASCII.GetBytes(txtKey.Text), Encoding.ASCII.GetBytes(txtIV.Text));
+						Core.encrypt(input, output, txtKey.Text );
 					}
 				}
 				Debug.WriteLine("Done ecnrpyting");
@@ -81,7 +81,7 @@ namespace PassManager
 				{
 					using (var output = new BufferedStream(new FileStream(dest, FileMode.Create)))
 					{
-						Core.decrypt(input, output, Encoding.ASCII.GetBytes(txtKey.Text), Encoding.ASCII.GetBytes(txtIV.Text));
+						Core.decrypt(input, output, txtKey.Text);
 					}
 				}
 				Debug.WriteLine("Done derpyting");
