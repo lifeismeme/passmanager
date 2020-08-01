@@ -12,28 +12,28 @@ namespace PassManagerUnitTests
 		private readonly static DateTime NOW = DateTime.Now;
 		private static Vault<Credential> sampleVault()
 		{
-			return new Vault<Credential>() {
-				new Credential()
-				{
-					Id =1,
-					Title="xx new tittle",
-					Username="xx username",
-					Password=new char[]{'p','@','S','s','W','0','r','d','?'},
-					Description="some description....",
-					Creation=NOW,
-					LastModified = NOW
-				},
-				new Credential()
-				{
-					Id =2,
-					Title="xx new tittle2",
-					Username="xx username2",
-					Password=new char[]{'x','@','2','s','W','0','r','d','?'},
-					Description="some description2....",
-					Creation = NOW,
-					LastModified = NOW
-				}
-			};
+			var v = new Vault<Credential>();
+			v.Add(new Credential()
+			{
+				Id = 1,
+				Title = "xx new tittle",
+				Username = "xx username",
+				Password = new char[] { 'p', '@', 'S', 's', 'W', '0', 'r', 'd', '?' },
+				Description = "some description....",
+				Creation = NOW,
+				LastModified = NOW
+			});
+			v.Add(new Credential()
+			{
+				Id = 2,
+				Title = "xx new tittle2",
+				Username = "xx username2",
+				Password = new char[] { 'x', '@', '2', 's', 'W', '0', 'r', 'd', '?' },
+				Description = "some description2....",
+				Creation = NOW,
+				LastModified = NOW
+			});
+			return v;
 		}
 		const string fileName = "hello.txt";
 		const string path = @"C:\Users\mlcmi\Desktop\passmanager\output\" + fileName;
@@ -77,19 +77,19 @@ namespace PassManagerUnitTests
 
 
 
-			const string pathEnc = path + ".encrypted.txt";
+		const string pathEnc = path + ".encrypted.txt";
+			const string samplePassword = "somepassword";
 		[TestMethod]
-		public void Encrypt()
+		public void Encrypt_File_EncryptedFile()
 		{
 			Assert.IsTrue(File.Exists(path));
 			try
 			{
-				byte[] key = new byte[32];
 				using (var input = new BufferedStream(new FileStream(path, FileMode.Open)))
 				{
 					using (var output = new BufferedStream(new FileStream(pathEnc, FileMode.Create)))
 					{
-						Core.encrypt(input, output, key);
+						Core.encrypt(input, output, samplePassword);
 					}
 				}
 
@@ -103,18 +103,17 @@ namespace PassManagerUnitTests
 		}
 
 		[TestMethod]
-		public void Decrypt()
+		public void Decrypt_EncryptedFile_OriginalFile()
 		{
 			Assert.IsTrue(File.Exists(pathEnc));
 			string pathDec = path + ".decrypted.txt";
 			try
 			{
-				byte[] key = new byte[32];
 				using (var input = new BufferedStream(new FileStream(pathEnc, FileMode.Open)))
 				{
 					using (var output = new BufferedStream(new FileStream(pathDec, FileMode.Create)))
 					{
-						Core.decrypt(input, output, key);
+						Core.decrypt(input, output, samplePassword);
 					}
 				}
 
@@ -126,6 +125,42 @@ namespace PassManagerUnitTests
 			{
 				Assert.Fail(ex.ToString());
 			}
+		}
+
+		[TestMethod]
+		public void GenerateKey_String_ByteKey()
+		{
+			string password = "!@#$%^&*()1234567890Abzc[]{}-=\\`~<>,.;':\"";
+			byte[] emptyKey = new byte[Core.KEY_SIZE_BYTE];
+			byte[] emptySalt = new byte[Core.SALT_SIZE_BYTE];
+
+			//act1
+			byte[] key = new byte[Core.KEY_SIZE_BYTE];
+			byte[] salt = new byte[Core.SALT_SIZE_BYTE];
+			Core.setGeneratedKeyAndSalt(password, ref key, ref salt);
+
+			Assert.IsTrue(key.Length == Core.KEY_SIZE_BYTE);
+			Assert.IsTrue(salt.Length == Core.SALT_SIZE_BYTE);
+			Assert.IsFalse(Enumerable.SequenceEqual(emptyKey, key));
+			Assert.IsFalse(Enumerable.SequenceEqual(emptySalt, salt));
+			Assert.IsFalse(Enumerable.SequenceEqual(key, salt));
+
+
+			//act2
+			string password2 = "somepassword";
+
+			byte[] key2 = new byte[Core.KEY_SIZE_BYTE];
+			byte[] salt2 = new byte[Core.SALT_SIZE_BYTE];
+			Core.setGeneratedKeyAndSalt(password2, ref key2, ref salt2);
+
+			Assert.IsTrue(key2.Length == Core.KEY_SIZE_BYTE);
+			Assert.IsTrue(salt2.Length == Core.SALT_SIZE_BYTE);
+			Assert.IsFalse(Enumerable.SequenceEqual(emptyKey, key2));
+			Assert.IsFalse(Enumerable.SequenceEqual(emptySalt, salt2));
+			Assert.IsFalse(Enumerable.SequenceEqual(key2, salt2));
+
+			Assert.IsFalse(Enumerable.SequenceEqual(key2, key));
+			Assert.IsFalse(Enumerable.SequenceEqual(salt2, salt));
 		}
 	}
 }

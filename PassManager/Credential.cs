@@ -13,7 +13,7 @@ namespace PassManager
 		private int id;
 		private string title;
 		private string username;
-		private char[] password = new char[0];
+		private char[] password;
 		private string description;
 		private DateTime creation;
 		private DateTime lastModified;

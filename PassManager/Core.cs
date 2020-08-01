@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -88,31 +89,92 @@ namespace PassManager
 			}
 
 		}
-		public static void encrypt(Stream input, Stream output, byte[] Key)
+
+		public const int SALT_SIZE_BYTE = 8;
+		public const int KEY_SIZE_BYTE = 32;
+		const int ITERATION = 1000;
+
+		public static byte[] regenerateKey(string password, byte[] salt)
 		{
-			const int blockSize = 16;
-			byte[] IV = new byte[blockSize];
-			using(var random = new RNGCryptoServiceProvider())
+			if (salt.Length != SALT_SIZE_BYTE)
+				throw new ArgumentException("invalid salt size");
+
+			Rfc2898DeriveBytes pbdkf2 = new Rfc2898DeriveBytes(password, salt, ITERATION);
+
+			return pbdkf2.GetBytes(KEY_SIZE_BYTE);
+
+		}
+		public static void setGeneratedKeyAndSalt(string password, ref byte[] key, ref byte[] salt)
+		{
+
+			if (key.Length != KEY_SIZE_BYTE)
+				throw new ArgumentException("invalid key size");
+			if (salt.Length != SALT_SIZE_BYTE)
+				throw new ArgumentException("invalid salt size");
+
+			using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
+			{
+				rngCsp.GetBytes(salt);
+				Rfc2898DeriveBytes pbdkf2 = new Rfc2898DeriveBytes(password, salt, ITERATION);
+
+				key = pbdkf2.GetBytes(KEY_SIZE_BYTE);
+			}
+		}
+
+		const int BLOCK_SIZE_BYTE = 16;
+		public static void encrypt(Stream input, Stream output, string password)
+		{
+			byte[] IV = new byte[BLOCK_SIZE_BYTE];
+			using (var random = new RNGCryptoServiceProvider())
 				random.GetBytes(IV);
-			
-			output.Write(IV, 0, blockSize);
-			encrypt(input, output, Key, IV);
+
+			output.Write(IV, 0, IV.Length);
+
+			byte[] key = new byte[KEY_SIZE_BYTE];
+			byte[] salt = new byte[SALT_SIZE_BYTE];
+			setGeneratedKeyAndSalt(password, ref key, ref salt);
+			try
+			{
+				//after IV, append the salt
+				output.Write(salt, 0, salt.Length);
+
+				encrypt(input, output, key, IV);
+			}
+			finally
+			{
+				for (int i = 0; i < key.Length; ++i)
+					key[i] = 0;
+			}
 		}
 
-		public static void decrypt(Stream input, Stream output, byte[] Key)
+		public static void decrypt(Stream input, Stream output, string password)
 		{
-			const int blockSize = 16;
-			byte[] IV = new byte[blockSize];
-			
 			//first 16bytes is the stored IV
-			int bytesRead = input.Read(IV, 0, blockSize);
-			if (bytesRead != 16)
-				throw new FileFormatException("cannot read first 16 bytes, possibility invalid file");
+			byte[] IV = new byte[BLOCK_SIZE_BYTE];
+			int bytesRead = input.Read(IV, 0, BLOCK_SIZE_BYTE);
+			if (bytesRead != BLOCK_SIZE_BYTE)
+				throw new FileFormatException($"cannot read first {BLOCK_SIZE_BYTE} bytes, possibility invalid file");
+			
+			//then 8bytes is the stored Salt that used to derive the key
+			byte[] salt = new byte[SALT_SIZE_BYTE];
+			bytesRead = input.Read(salt, 0, salt.Length);
+			if (bytesRead != SALT_SIZE_BYTE)
+				throw new FileFormatException($"cannot read salt of {SALT_SIZE_BYTE} bytes, possibility invalid file");
 
-			decrypt(input, output, Key, IV);
+			byte[] key = regenerateKey(password, salt);
+			
+			try
+			{
+				decrypt(input, output, key, IV);
+			}
+			finally
+			{
+				for (int i = 0; i < key.Length; ++i)
+					key[i] = 0;
+			}
 		}
 
-		public static void encrypt(Stream input, Stream output, byte[] Key, byte[] IV)
+		private static void encrypt(Stream input, Stream output, byte[] Key, byte[] IV)
 		{
 			if (Key == null || Key.Length <= 0)
 				throw new ArgumentNullException("blank agruement Key");
@@ -131,18 +193,15 @@ namespace PassManager
 				{
 					int b;
 					while ((b = input.ReadByte()) != -1)
-					{
 						csEncrypt.WriteByte((byte)b);
-					}
+
 					csEncrypt.FlushFinalBlock();
 				}
-
-
 			}
 
 		}
 
-		public static void decrypt(Stream input, Stream output, byte[] Key, byte[] IV)
+		private static void decrypt(Stream input, Stream output, byte[] Key, byte[] IV)
 		{
 			if (Key == null || Key.Length <= 0)
 				throw new ArgumentNullException("blank agruement Key");
@@ -163,9 +222,7 @@ namespace PassManager
 
 					int b;
 					while ((b = csDecrypt.ReadByte()) != -1)
-					{
 						output.WriteByte((byte)b);
-					}
 				}
 
 			}
@@ -174,7 +231,9 @@ namespace PassManager
 
 		public static void serializeToJson(Object data, string path)
 		{
-			string json = JsonSerializer.Serialize(data);
+			var x = new JsonSerializerOptions();
+			x.WriteIndented = true;
+			string json = JsonSerializer.Serialize(data, x);
 			File.WriteAllText(path, json);
 		}
 

@@ -5,18 +5,46 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Linq;
+using System.Collections;
 
 namespace PassManager
 {
-	public class Vault<T> : ObservableCollection<T>
+	public class Vault<T>
 	{
+		public DateTime Creation { get; set; }
+		public DateTime LastModified { get; set; }
+		public string Sha256sum { get; set; }
+		public int Count { get { return Items.Count; } }
+		public Dictionary<string, T> Items { get; set; } //<id, Item> 
+		//serializing Dictionary<?,?> to json can be either string or Object with public properties only, other types in an Dictionary/Hastable are not supported to be serialize to json.
 
+		public void Add(T item)
+		{
+			int id = Items.Count + 1;
+			while (Items.ContainsKey(id.ToString()))
+				id += 1;
 
+			Items.Add(id.ToString(), item);
+		}
 
-		public DateTime Creation { get  ; set; }
-		public DateTime LastModified { get ; set ; }
-		public string Sha256sum { get; set  ; }
+		public Vault()
+		{
+			DateTime NOW = DateTime.Now;
+			Creation = NOW;
+			LastModified = NOW;
+			Sha256sum = null;
+			Items = new Dictionary<string, T>();
+		}
 
+		public IEnumerator<KeyValuePair<string, T>> GetEnumerator()
+		{
+			return Items.GetEnumerator();
+		}
+
+		public static Vault<T> CreateNew()
+		{
+			return new Vault<T>();
+		}
 
 
 		public override bool Equals(object obj)
@@ -24,20 +52,18 @@ namespace PassManager
 			if (base.Equals(obj))
 				return true;
 
-			var vault = (Vault<T>)obj;
-			IOrderedEnumerable<T> sortedVault = from c in vault
-												orderby c
-												select c;
-			int count = this.Count;
-			var en = sortedVault.GetEnumerator();
-			int i = 0;
-			for (; en.MoveNext() && i < count; ++i)
+			var theirItems = ((Vault<T>)obj).Items;
+			var smallerSet = theirItems.Count < Items.Count ? theirItems : Items;
+			var largerSet = theirItems.Count > Items.Count ? theirItems : Items;
+			foreach (var i in smallerSet)
 			{
-				if (!en.Current.Equals(this[i]))
-					return false;
+				T item;
+				if (largerSet.TryGetValue(i.Key, out item))
+					if (item.Equals(i.Value))
+						return true;
 			}
-		
-			return (!en.MoveNext() && i == count);
+
+			return false;
 		}
 
 		public override int GetHashCode()

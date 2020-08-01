@@ -50,7 +50,7 @@ namespace PassManager
 			lstTitle.DisplayMemberPath = propertyOfCredentialToDisplay;
 
 			//register eventhandler
-			ViewModel.Credentials.CollectionChanged += UpdateLstTitle;
+			//ViewModel.Credentials.CollectionChanged += UpdateLstTitle;
 
 			//add sample
 			ViewModel.initSample();
@@ -75,16 +75,18 @@ namespace PassManager
 			lstTitle.Items.Clear();
 			if (titleSearch == string.Empty)
 			{
-				foreach (Credential c in ViewModel.Credentials)
+				foreach (var item in ViewModel.Vault)
 				{
+					var c = item.Value;
 					lstTitle.Items.Add(c);
 				}
 			}
 			else
 			{
 				lstTitle.Items.Clear();
-				foreach (Credential c in ViewModel.Credentials)
+				foreach (var item in ViewModel.Vault)
 				{
+					var c = item.Value;
 					string title = c.Title.ToLower();
 					if (title.Contains(titleSearch) || titleSearch.Contains(title))
 						lstTitle.Items.Add(c);
@@ -174,8 +176,8 @@ namespace PassManager
 				SelectedItemState.ResetState();
 			}
 			setEditable(false);
-			int id = ViewModel.Credentials.Count;
-			ViewModel.Credentials.Add(new Credential()
+			int id = ViewModel.Vault.Count;
+			ViewModel.Vault.Add(new Credential()
 			{
 				Id = id,
 				Title = $"-New Title id ({id})-",
