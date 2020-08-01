@@ -63,7 +63,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_IdChange_NotifiedAndEqual()
 		{
-			var credential = new Credential()
+			var credential = new Vault()
 			{
 				Id = 1,
 			};
@@ -84,7 +84,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_TitleChange_NotifiedAndEqual()
 		{
-			var credential = new Credential() {
+			var credential = new Vault() {
 				Title="title",
 			};
 			object actualSender = null;
@@ -105,7 +105,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_UsernameChange_NotifiedAndEqual()
 		{
-			var credential = new Credential()
+			var credential = new Vault()
 			{
 				Username = "username",
 			};
@@ -127,7 +127,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_PasswordChange_NotifiedAndEqual()
 		{
-			var credential = new Credential()
+			var credential = new Vault()
 			{
 				Password = new char[] { 'p', '@', 's', 's', 'W', '0', 'r', 'd' },
 			};
@@ -151,7 +151,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_DescriptionChange_NotifiedAndEqual()
 		{
-			var credential = new Credential()
+			var credential = new Vault()
 			{
 				Description = "description..."
 			};
@@ -173,7 +173,7 @@ namespace PassManagerUnitTests
 		[TestMethod]
 		public void PropertyChanged_CreationChange_NotifiedAndEqual()
 		{
-			var credential = new Credential()
+			var credential = new Vault()
 			{
 				Creation = new DateTime(1992,1,31)
 			};
@@ -196,7 +196,7 @@ namespace PassManagerUnitTests
 		public void Creation_DefaultDateTime_IsNow()
 		{
 			DateTime now = DateTime.Now;
-			var credential = new Credential();
+			var credential = new Vault();
 			DateTime secLater = DateTime.Now;
 			
 			
@@ -208,7 +208,7 @@ namespace PassManagerUnitTests
 		public void LastModified_Changes_LastModifiedIsUpdated()
 		{
 			DateTime oldLastModified = new DateTime(1999, 1, 31);
-			var credential = new Credential() { LastModified = oldLastModified };
+			var credential = new Vault() { LastModified = oldLastModified };
 			object actualSender = null;
 			EventArgs actualEvent = null;
 			credential.PropertyChanged += (sender, e) => {
@@ -254,7 +254,7 @@ namespace PassManagerUnitTests
 		{
 			char[] original = new char[] { '1', 'A', 'b', '%' };
 			char[] copy = new char[] { '1', 'A', 'b', '%' };
-			var credential = new Credential() {
+			var credential = new Vault() {
 				Password = original
 			};
 

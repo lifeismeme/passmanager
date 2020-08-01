@@ -11,18 +11,18 @@ namespace PassManager
 {
     class ViewModel
     {
-		public Vault<Credential> Credentials { get; set; }
+		public Vault<Vault> Vault { get; set; }
 		 
  
 
 		public ViewModel()
 		{
-			Credentials = new Vault<Credential>();
+			Vault = new Vault<Vault>();
 		}
 
 		public void initSample()
 		{
-			Credentials.Add(new Credential
+			Vault.Add(new Vault
 			{
 				Id = 1,
 				Username = "hello world",
@@ -30,7 +30,7 @@ namespace PassManager
 				Description = "good by.\nh",
 				Title = "o0o"
 			});
-			Credentials.Add(new Credential
+			Vault.Add(new Vault
 			{
 				Id = 2,
 				Password = new char[] { 'A', 'b', 'a' },
@@ -38,15 +38,7 @@ namespace PassManager
 			});
 		}
 
-		internal void AddCredential(Credential credential)
-		{
-			Credentials.Add(credential);
-		}
-		internal int CredentialCount()
-		{
-			return Credentials.Count;
-		}
-
+		
 		void createNewValut(string path, byte[] bytes)
 		{
 			//if (File.Exists(path))

@@ -10,10 +10,10 @@ namespace PassManagerUnitTests
 	public class CoreTests
 	{
 		private readonly static DateTime NOW = DateTime.Now;
-		private static Vault<Credential> sampleVault()
+		private static Vault<Vault> sampleVault()
 		{
-			return new Vault<Credential>() {
-				new Credential()
+			return new Vault<Vault>() {
+				new Vault()
 				{
 					Id =1,
 					Title="xx new tittle",
@@ -23,7 +23,7 @@ namespace PassManagerUnitTests
 					Creation=NOW,
 					LastModified = NOW
 				},
-				new Credential()
+				new Vault()
 				{
 					Id =2,
 					Title="xx new tittle2",
@@ -47,7 +47,7 @@ namespace PassManagerUnitTests
 				Core.serializeToJson(vault, path);
 				Assert.IsTrue(File.Exists(path));
 
-				var savedVault = Core.deserializeJson<Credential>(path);
+				var savedVault = Core.deserializeJson<Vault>(path);
 				Assert.AreEqual(vault, savedVault);
 			}
 			catch (Exception ex)
@@ -65,7 +65,7 @@ namespace PassManagerUnitTests
 			{
 				Assert.IsTrue(File.Exists(path));
 
-				var savedVault = Core.deserializeJson<Credential>(path);
+				var savedVault = Core.deserializeJson<Vault>(path);
 
 				Assert.AreEqual(sampleV, savedVault);
 			}

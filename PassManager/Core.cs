@@ -174,7 +174,10 @@ namespace PassManager
 
 		public static void serializeToJson(Object data, string path)
 		{
-			string json = JsonSerializer.Serialize(data);
+			var x = new JsonSerializerOptions();
+			x.WriteIndented = true;
+			x.Converters.Add(new VaultConverter());
+			string json = JsonSerializer.Serialize(data,x);
 			File.WriteAllText(path, json);
 		}
 

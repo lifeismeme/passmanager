@@ -17,7 +17,7 @@ namespace PassManager
 	/// 
 	public partial class VaultWindow : Window
 	{
-		private Credential selectedCredential = null;
+		private Vault selectedCredential = null;
 
 		private ViewModel ViewModel { get; set; } = new ViewModel();
 
@@ -50,7 +50,7 @@ namespace PassManager
 			lstTitle.DisplayMemberPath = propertyOfCredentialToDisplay;
 
 			//register eventhandler
-			ViewModel.Credentials.CollectionChanged += UpdateLstTitle;
+			//ViewModel.Credentials.CollectionChanged += UpdateLstTitle;
 
 			//add sample
 			ViewModel.initSample();
@@ -63,7 +63,7 @@ namespace PassManager
 			if (e == null)
 				return;
 
-			foreach (Credential c in e.NewItems)
+			foreach (Vault c in e.NewItems)
 				lstTitle.Items.Add(c);
 		}
 
@@ -75,7 +75,7 @@ namespace PassManager
 			lstTitle.Items.Clear();
 			if (titleSearch == string.Empty)
 			{
-				foreach (Credential c in ViewModel.Credentials)
+				foreach (Vault c in ViewModel.Vault)
 				{
 					lstTitle.Items.Add(c);
 				}
@@ -83,7 +83,7 @@ namespace PassManager
 			else
 			{
 				lstTitle.Items.Clear();
-				foreach (Credential c in ViewModel.Credentials)
+				foreach (Vault c in ViewModel.Vault)
 				{
 					string title = c.Title.ToLower();
 					if (title.Contains(titleSearch) || titleSearch.Contains(title))
@@ -126,9 +126,9 @@ namespace PassManager
 
 			setEditable(false);
 
-			selectedCredential = (Credential)lstTitle.SelectedItem;
+			selectedCredential = (Vault)lstTitle.SelectedItem;
 
-			Credential c = selectedCredential;
+			Vault c = selectedCredential;
 			txtTitle.Text = c.Title;
 			txtUsername.Text = c.Username;
 			txtPassword.Text = new String(c.Password);
@@ -156,7 +156,7 @@ namespace PassManager
 
 		private void setChangesToSelectedCredential()
 		{
-			Credential c = selectedCredential;
+			Vault c = selectedCredential;
 			c.Title = txtTitle.Text.Trim();
 			c.Username = txtUsername.Text.Trim();
 			c.Password = txtPassword.Text.Trim().ToCharArray();
@@ -174,8 +174,8 @@ namespace PassManager
 				SelectedItemState.ResetState();
 			}
 			setEditable(false);
-			int id = ViewModel.Credentials.Count;
-			ViewModel.Credentials.Add(new Credential()
+			int id = ViewModel.Vault.Credentials.Count;
+			ViewModel.Vault.Add(new Vault()
 			{
 				Id = id,
 				Title = $"-New Title id ({id})-",
