@@ -71,6 +71,7 @@ namespace PassManager
 		{
 			var hashCode = 165930658;
 			hashCode *= -1521134295 + Id.GetHashCode();
+			hashCode *= -1521134295 + EqualityComparer<int>.Default.GetHashCode(Id);
 			hashCode *= -1521134295 + EqualityComparer<string>.Default.GetHashCode(Title);
 			hashCode *= -1521134295 + EqualityComparer<string>.Default.GetHashCode(Username);
 			hashCode *= -1521134295 + EqualityComparer<char[]>.Default.GetHashCode(Password);

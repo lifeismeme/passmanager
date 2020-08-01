@@ -11,14 +11,11 @@ namespace PassManager
 	public class Vault<T> : ObservableCollection<T>
 	{
 
-		private DateTime creation;
-		private DateTime lastModified;
-		private string sha256sum;
 
 
-		public DateTime Creation { get => creation; set => creation = value; }
-		public DateTime LastModified { get => lastModified; set => lastModified = value; }
-		public string Sha256sum { get => sha256sum; set => sha256sum = value; }
+		public DateTime Creation { get  ; set; }
+		public DateTime LastModified { get ; set ; }
+		public string Sha256sum { get; set  ; }
 
 
 
@@ -46,9 +43,6 @@ namespace PassManager
 		public override int GetHashCode()
 		{
 			var hashCode = 1636230790;
-			hashCode *= -1521134295 + creation.GetHashCode();
-			hashCode *= -1521134295 + lastModified.GetHashCode();
-			hashCode *= -1521134295 + EqualityComparer<string>.Default.GetHashCode(sha256sum);
 			hashCode *= -1521134295 + Creation.GetHashCode();
 			hashCode *= -1521134295 + LastModified.GetHashCode();
 			hashCode *= -1521134295 + EqualityComparer<string>.Default.GetHashCode(Sha256sum);
