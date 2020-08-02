@@ -58,6 +58,8 @@ namespace PassManager
 			if (base.Equals(obj))
 				return true;
 			var c = obj as Credential;
+			if (c == null)
+				return false;
 			return (c.Id == Id
 				&& c.Title == Title
 				&& c.Username == username

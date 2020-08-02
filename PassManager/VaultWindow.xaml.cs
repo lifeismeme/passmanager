@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace PassManager
 {
@@ -17,11 +21,12 @@ namespace PassManager
 	/// 
 	public partial class VaultWindow : Window
 	{
-		private Credential selectedCredential = null;
+		private Credential SelectedCredential { get; set; } = null;
 
 		private ViewModel ViewModel { get; set; } = new ViewModel();
 
 		private _SelectedItemState SelectedItemState { get; set; } = new _SelectedItemState();
+
 		private class _SelectedItemState
 		{
 			public bool IsEditing { private get; set; } = false;
@@ -39,35 +44,29 @@ namespace PassManager
 		}
 		public VaultWindow()
 		{
-			InitializeComponent();
 			init();
+		}
+
+		public VaultWindow(Window Base)
+		{
+			init();
+			Left = Base.Left + Base.Width / 2 - Width / 2;
+			Top = Base.Top + Base.Height / 2 - Height / 2;
 		}
 
 		private void init()
 		{
+			InitializeComponent();
 
 			const string propertyOfCredentialToDisplay = "Title";
 			lstTitle.DisplayMemberPath = propertyOfCredentialToDisplay;
-
-			//register eventhandler
-			//ViewModel.Credentials.CollectionChanged += UpdateLstTitle;
+			ViewModel.Vault.OnItemAdded += (sender, addedItem) => lstTitle.Items.Add(addedItem);
 
 			//add sample
 			ViewModel.initSample();
 
 			gridCredential.IsEnabled = false;
 		}
-
-		private void UpdateLstTitle(object sender, NotifyCollectionChangedEventArgs e)
-		{
-			if (e == null)
-				return;
-
-			foreach (Credential c in e.NewItems)
-				lstTitle.Items.Add(c);
-		}
-
-
 
 		private void TxtSearchTitle_TextChanged(object sender, TextChangedEventArgs e)
 		{
@@ -94,23 +93,52 @@ namespace PassManager
 			}
 		}
 
-		private void TxtSearchTitle_GotFocus(object sender, RoutedEventArgs e)
+		private void TxtSearchTitle_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
 		{
-			((TextBox)sender).SelectAll();
+			if (e.Key == Key.Escape)
+			{
+				if (txtSearchTitle.Text == "")
+				{
+					this.Focus();
+				}
+				txtSearchTitle.Text = "";
+			}
 		}
 
+		private void TxtSearchTitle_GotFocus(object sender, RoutedEventArgs e)
+		{
+			((TextBox)sender).SelectAll(); //doesn't work, might be a bug.
+		}
+
+		private SaveFileDialog saveDialog = new SaveFileDialog() { Filter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault" };
 		private void MenuNew_Click(object sender, RoutedEventArgs e)
 		{
-
+			saveDialog.ShowDialog();
 		}
 		private void menuOpen_Click(object sender, RoutedEventArgs e)
 		{
+			OpenFileDialog openDialog = new OpenFileDialog() { Filter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault" };
+			openDialog.ShowDialog();
+			if (openDialog.SafeFileName == "")
+				return;
+			var passwordDialog = new PasswordDialog(this);
+			passwordDialog.ShowDialog();
+			if (!passwordDialog.IsOk)
+				return;
+
+			bool hasLoaded = ViewModel.loadVault(openDialog.FileName, passwordDialog.txtPassword.Password);
+			if (!hasLoaded)
+				MessageBox.Show("Cannot open vault", "Decryption Fail", MessageBoxButton.OK, MessageBoxImage.Stop);
 
 		}
 
 		private void MenuSave_Click(object sender, RoutedEventArgs e)
 		{
-			 
+			using (var dialog = new PasswordDialog(this))
+			{
+
+				dialog.ShowDialog();
+			}
 		}
 
 		private void MenuExit_Click(object sender, RoutedEventArgs e)
@@ -126,19 +154,25 @@ namespace PassManager
 			if (SelectedItemState.HasUnsavedChanges())
 				flushUnsavedCredentialChanges();
 
+			SelectedCredential = (Credential)lstTitle.SelectedItem;
 			setEditable(false);
+			log($"selected Credential.Id: {SelectedCredential.Id}");
+		}
+		private void displaySelectedCredential(Credential c)
+		{
+			if (c == null)
+			{
+				log("error: selected credential is Null, cannot display.");
+				return;
+			}
 
-			selectedCredential = (Credential)lstTitle.SelectedItem;
-
-			Credential c = selectedCredential;
 			txtTitle.Text = c.Title;
 			txtUsername.Text = c.Username;
 			txtPassword.Text = new String(c.Password);
 			txtDescription.Text = c.Description;
 			SelectedItemState.ResetState();
-
-			log($"selected Credential.Id: {c.Id}");
 		}
+
 
 		private void flushUnsavedCredentialChanges()
 		{
@@ -153,12 +187,9 @@ namespace PassManager
 			}
 		}
 
-
-
-
 		private void setChangesToSelectedCredential()
 		{
-			Credential c = selectedCredential;
+			Credential c = SelectedCredential;
 			c.Title = txtTitle.Text.Trim();
 			c.Username = txtUsername.Text.Trim();
 			c.Password = txtPassword.Text.Trim().ToCharArray();
@@ -176,16 +207,26 @@ namespace PassManager
 				SelectedItemState.ResetState();
 			}
 			setEditable(false);
-			int id = ViewModel.Vault.Count;
-			ViewModel.Vault.Add(new Credential()
-			{
-				Id = id,
-				Title = $"-New Title id ({id})-",
-				Username = "",
-				Password = new char[0],
-				Description = ""
-			});
 
+			using (var dialog = new InputDialog(this))
+			{
+				dialog.Title = "New Credential";
+				dialog.txtMessage.Text = "New title:";
+				dialog.ShowDialog();
+				if (dialog.IsOk)
+				{
+					var newCredential = new Credential()
+					{
+						Title = dialog.txtInput.Text.Trim() ?? $"-New Title id ({ViewModel.Vault.Count})-",
+						Username = "",
+						Password = new char[0],
+						Description = ""
+					};
+					ViewModel.Vault.Add(newCredential);
+
+					newCredential.Id = ViewModel.Vault.LastAddedItemId;
+				}
+			}
 		}
 
 		private void ChkEdit_Click(object sender, RoutedEventArgs e)
@@ -216,7 +257,10 @@ namespace PassManager
 			if (isEnable)
 				chkEdit.Content = "Editing";
 			else
+			{
 				chkEdit.Content = "Edit";
+				displaySelectedCredential(SelectedCredential);
+			}
 		}
 
 		private void TxtTitle_TextChanged(object sender, TextChangedEventArgs e)
@@ -274,7 +318,7 @@ namespace PassManager
 			private TaskCompletionSource<Clipboard> autoClear = new TaskCompletionSource<Clipboard>();
 			public int autoClearAfterMilliSecond { get; set; } = 15000;
 			private Thread task { get; set; } = new Thread(delegate () { });
-			
+
 			public void Set(string text)
 			{
 				copiedValue = text;
@@ -317,10 +361,15 @@ namespace PassManager
 			btnCopyPassword.Content = x;
 		}
 
-		
+
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
 			//eixt
+		}
+
+		private void GridCredential_LostFocus(object sender, RoutedEventArgs e)
+		{
+			log("##Edit lost focus!##");
 		}
 	}
 }

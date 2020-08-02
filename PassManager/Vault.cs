@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Linq;
-using System.Collections;
+
 
 namespace PassManager
 {
@@ -15,9 +10,12 @@ namespace PassManager
 		public DateTime LastModified { get; set; }
 		public string Sha256sum { get; set; }
 		public int Count { get { return Items.Count; } }
-		public Dictionary<string, T> Items { get; set; } //<id, Item> 
 		//serializing Dictionary<?,?> to json can be either string or Object with public properties only, other types in an Dictionary/Hastable are not supported to be serialize to json.
+		public Dictionary<string, T> Items { get; set; } //<id, Item> 
+		public int LastAddedItemId { get; private set; }
 
+		public delegate void ItemAddedHandler (Vault<T> sender, T addedItem);
+		public event ItemAddedHandler OnItemAdded;
 		public void Add(T item)
 		{
 			int id = Items.Count + 1;
@@ -25,6 +23,8 @@ namespace PassManager
 				id += 1;
 
 			Items.Add(id.ToString(), item);
+			LastAddedItemId = id;
+			OnItemAdded?.Invoke(this, item);
 		}
 
 		public Vault()

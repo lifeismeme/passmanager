@@ -11,7 +11,7 @@
     </Window.Resources>
     <Grid>
         <ListBox x:Name="lstTitle" HorizontalAlignment="Left" Height="366" Margin="10,69,0,0" VerticalAlignment="Top" Width="200" SelectionChanged="LstTitle_SelectionChanged"/>
-        <TextBox x:Name="txtSearchTitle" HorizontalAlignment="Left" Height="23" Margin="10,41,0,0" TextWrapping="Wrap" Text="title" VerticalAlignment="Top" Width="200" GotFocus="TxtSearchTitle_GotFocus" TextChanged="TxtSearchTitle_TextChanged"/>
+        <TextBox x:Name="txtSearchTitle" HorizontalAlignment="Left" Height="23" Margin="10,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" GotFocus="TxtSearchTitle_GotFocus" TextChanged="TxtSearchTitle_TextChanged" UndoLimit="20" Text="title" AutomationProperties.HelpText="Search Title" KeyUp="TxtSearchTitle_KeyUp"/>
         <DockPanel HorizontalAlignment="Left" Height="21" LastChildFill="False" Margin="10,3,0,0" VerticalAlignment="Top" Width="644">
             <Menu DockPanel.Dock="Top">
                 <MenuItem Header="_File">
@@ -23,7 +23,7 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        <Grid x:Name="gridCredential" Margin="215,69,73,0" Height="390" VerticalAlignment="Top" DataContext="{Binding Mode=OneWay}">
+        <Grid x:Name="gridCredential" Margin="215,69,73,0" Height="390" VerticalAlignment="Top" DataContext="{Binding Mode=OneWay}" LostFocus="GridCredential_LostFocus">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="274*"/>
                 <ColumnDefinition Width="113*"/>
