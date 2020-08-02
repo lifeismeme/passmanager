@@ -6,90 +6,12 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
+
 
 namespace PassManager
 {
 	public class Core
 	{
-		static void copyPast(string path, string destinationPath, string fileFullName)
-		{
-			if (!File.Exists(path))
-				return;
-
-			byte[] data = File.ReadAllBytes(path);
-
-			if (!Directory.Exists(destinationPath))
-				return;
-
-			File.WriteAllBytes(destinationPath + $"/{fileFullName}", data);
-
-		}
-
-		static byte[] encrypt(byte[] inputData, byte[] Key, byte[] IV)
-		{
-			if (Key == null || Key.Length <= 0)
-				throw new ArgumentNullException("blank agruement Key");
-			if (IV == null || IV.Length <= 0)
-				throw new ArgumentNullException("blank agruement IV");
-
-			using (Aes aes = Aes.Create())
-			{
-				aes.Key = Key;
-				aes.IV = IV;
-
-				// Create an encryptor to perform the stream transform.
-				ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-
-
-				using (var outputBuffer = new MemoryStream())
-				{
-					using (CryptoStream csEncrypt = new CryptoStream(outputBuffer, encryptor, CryptoStreamMode.Write))
-					{
-
-						csEncrypt.Write(inputData, 0, inputData.Length);
-
-						csEncrypt.FlushFinalBlock();
-						return outputBuffer.ToArray();
-
-					}
-				}
-
-			}
-
-		}
-		static byte[] decrypt(byte[] inputCipher, byte[] Key, byte[] IV)
-		{
-			if (Key == null || Key.Length <= 0)
-				throw new ArgumentNullException("blank agruement Key");
-			if (IV == null || IV.Length <= 0)
-				throw new ArgumentNullException("blank agruement IV");
-
-			using (Aes aes = Aes.Create())
-			{
-				aes.Key = Key;
-				aes.IV = IV;
-
-				// Create a decryptor to perform the stream transform.
-				ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-
-				using (var inbuffer = new MemoryStream(inputCipher))
-				{
-
-					using (var csDecrypt = new CryptoStream(inbuffer, decryptor, CryptoStreamMode.Read))
-					{
-						byte[] data = new byte[inputCipher.Length];
-
-						csDecrypt.Read(data, 0, data.Length);
-
-						return data;
-					}
-				}
-			}
-
-		}
-
 		public const int SALT_SIZE_BYTE = 8;
 		public const int KEY_SIZE_BYTE = 32;
 		const int ITERATION = 1000;
@@ -102,19 +24,17 @@ namespace PassManager
 			Rfc2898DeriveBytes pbdkf2 = new Rfc2898DeriveBytes(password, salt, ITERATION);
 
 			return pbdkf2.GetBytes(KEY_SIZE_BYTE);
-
 		}
 		public static void setGeneratedKeyAndSalt(string password, ref byte[] key, ref byte[] salt)
 		{
-
 			if (key.Length != KEY_SIZE_BYTE)
 				throw new ArgumentException("invalid key size");
 			if (salt.Length != SALT_SIZE_BYTE)
 				throw new ArgumentException("invalid salt size");
 
-			using (RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider())
+			using (RNGCryptoServiceProvider random = new RNGCryptoServiceProvider())
 			{
-				rngCsp.GetBytes(salt);
+				random.GetBytes(salt);
 				Rfc2898DeriveBytes pbdkf2 = new Rfc2898DeriveBytes(password, salt, ITERATION);
 
 				key = pbdkf2.GetBytes(KEY_SIZE_BYTE);
@@ -154,7 +74,7 @@ namespace PassManager
 			int bytesRead = input.Read(IV, 0, BLOCK_SIZE_BYTE);
 			if (bytesRead != BLOCK_SIZE_BYTE)
 				throw new FileFormatException($"cannot read first {BLOCK_SIZE_BYTE} bytes, possibility invalid file");
-			
+
 			//then 8bytes is the stored Salt that used to derive the key
 			byte[] salt = new byte[SALT_SIZE_BYTE];
 			bytesRead = input.Read(salt, 0, salt.Length);
@@ -162,7 +82,7 @@ namespace PassManager
 				throw new FileFormatException($"cannot read salt of {SALT_SIZE_BYTE} bytes, possibility invalid file");
 
 			byte[] key = regenerateKey(password, salt);
-			
+
 			try
 			{
 				decrypt(input, output, key, IV);
@@ -188,7 +108,6 @@ namespace PassManager
 
 				// Create an encryptor to perform the stream transform.
 				ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-
 				using (CryptoStream csEncrypt = new CryptoStream(output, encryptor, CryptoStreamMode.Write))
 				{
 					int b;
@@ -213,27 +132,27 @@ namespace PassManager
 				aes.Key = Key;
 				aes.IV = IV;
 
-
 				ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-
 				using (var csDecrypt = new CryptoStream(input, decryptor, CryptoStreamMode.Read))
 				{
-
 					int b;
 					while ((b = csDecrypt.ReadByte()) != -1)
 						output.WriteByte((byte)b);
 				}
-
 			}
+		}
 
+		public static void serializeToJsonNiceFormat(Object data, string path)
+		{
+			var Option = new JsonSerializerOptions();
+			Option.WriteIndented = true;
+			string json = JsonSerializer.Serialize(data, Option);
+			File.WriteAllText(path, json);
 		}
 
 		public static void serializeToJson(Object data, string path)
 		{
-			var x = new JsonSerializerOptions();
-			x.WriteIndented = true;
-			string json = JsonSerializer.Serialize(data, x);
+			string json = JsonSerializer.Serialize(data);
 			File.WriteAllText(path, json);
 		}
 
@@ -241,6 +160,28 @@ namespace PassManager
 		{
 			string json = File.ReadAllText(path);
 			return JsonSerializer.Deserialize<Vault<T>>(json);
+		}
+
+		public static byte[] generateRandomPassword(int length)
+		{
+			const int minPrintableASIIC = 33;
+			const int overPrintableASIIC = 127;
+			byte[] oneByte = new byte[1];
+			byte[] password = new byte[length];
+			using (RNGCryptoServiceProvider random = new RNGCryptoServiceProvider())
+			{
+				for (int i = 0; i < length; ++i)
+				{
+					random.GetBytes(oneByte);
+					int printableASIIC;
+					while ((printableASIIC = (oneByte[0] + minPrintableASIIC) % overPrintableASIIC) < minPrintableASIIC)
+					{
+						random.GetBytes(oneByte);
+					}
+					password[i] = (byte)printableASIIC;
+				}
+			}
+			return password;
 		}
 	}
 }

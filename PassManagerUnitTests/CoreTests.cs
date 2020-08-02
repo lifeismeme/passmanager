@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -44,7 +45,7 @@ namespace PassManagerUnitTests
 
 			try
 			{
-				Core.serializeToJson(vault, path);
+				Core.serializeToJsonNiceFormat(vault, path);
 				Assert.IsTrue(File.Exists(path));
 
 				var savedVault = Core.deserializeJson<Credential>(path);
@@ -78,7 +79,7 @@ namespace PassManagerUnitTests
 
 
 		const string pathEnc = path + ".encrypted.txt";
-			const string samplePassword = "somepassword";
+		const string samplePassword = "somepassword";
 		[TestMethod]
 		public void Encrypt_File_EncryptedFile()
 		{
@@ -161,6 +162,27 @@ namespace PassManagerUnitTests
 
 			Assert.IsFalse(Enumerable.SequenceEqual(key2, key));
 			Assert.IsFalse(Enumerable.SequenceEqual(salt2, salt));
+		}
+
+		[TestMethod]
+		public void GenerateRandomPassword_LengthN_RandomPrintableASCIIwithNcharacters()
+		{
+			const int len = 30;
+			const int minPrintableASIIC = 33;
+			const int maxPrintableASIIC = 126;
+
+			var password = Core.generateRandomPassword(len);
+			var password2 = Core.generateRandomPassword(len);
+			Debug.WriteLine(System.Text.Encoding.ASCII.GetString(password));
+
+			foreach (byte c in password)
+				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
+			foreach (byte c in password2)
+				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
+
+			Assert.IsTrue(password.Length == len);
+			Assert.IsTrue(password2.Length == len);
+			Assert.IsFalse(Enumerable.SequenceEqual(password, password2));
 		}
 	}
 }

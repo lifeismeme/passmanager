@@ -91,6 +91,7 @@
     </ApplicationDefinition>
     <Compile Include="CredentialToTitle.cs" />
     <Compile Include="Credential.cs" />
+    <Compile Include="DeletedCode.cs" />
     <Compile Include="Vault.cs" />
     <Compile Include="VaultConverter.cs" />
     <Compile Include="VaultWindow.xaml.cs">
