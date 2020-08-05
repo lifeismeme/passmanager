@@ -39,10 +39,14 @@ namespace PassManagerUnitTests
 		const string fileName = "hello.txt";
 		const string path = @"C:\Users\mlcmi\Desktop\passmanager\output\" + fileName;
 		[TestMethod]
-		public void SerializeToJson_VaultOfCredential_FileCreated()
+		public void SerializeToAndDeserializeJson_Vault_SameVault()
 		{
 			var vault = sampleVault();
-
+			SerializeToJson_Vault_FileCreated(vault);
+			DeserializeJsonToVault_JsonFile_Vault(vault);
+		}
+		private void SerializeToJson_Vault_FileCreated(Vault<Credential> vault)
+		{
 			try
 			{
 				Core.serializeToJsonNiceFormat(vault, path);
@@ -57,18 +61,15 @@ namespace PassManagerUnitTests
 			}
 		}
 
-		[TestMethod]
-		public void DeserializeJsonToVault_JsonFile_VaultOfCredential()
+		private void DeserializeJsonToVault_JsonFile_Vault(Vault<Credential> previousVault)
 		{
-			var sampleV = sampleVault();
-
 			try
 			{
 				Assert.IsTrue(File.Exists(path));
 
 				var savedVault = Core.deserializeJson<Credential>(path);
 
-				Assert.AreEqual(sampleV, savedVault);
+				Assert.AreEqual(previousVault, savedVault);
 			}
 			catch (Exception ex)
 			{

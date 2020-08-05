@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -21,14 +22,13 @@ namespace PassManager
 	/// 
 	public partial class VaultWindow : Window
 	{
-		private Credential SelectedCredential { get; set; } = null;
-
 		private ViewModel ViewModel { get; set; } = new ViewModel();
 
-		private _SelectedItemState SelectedItemState { get; set; } = new _SelectedItemState();
+		private SelectedItem<Credential> SelectedItemState { get; set; } = new SelectedItem<Credential>();
 
-		private class _SelectedItemState
+		private class SelectedItem<T>
 		{
+			public T Item { get; set; }
 			public bool IsEditing { private get; set; } = false;
 			public bool HasEdited { private get; set; } = false;
 
@@ -60,12 +60,24 @@ namespace PassManager
 
 			const string propertyOfCredentialToDisplay = "Title";
 			lstTitle.DisplayMemberPath = propertyOfCredentialToDisplay;
-			ViewModel.Vault.OnItemAdded += (sender, addedItem) => lstTitle.Items.Add(addedItem);
+			registerVaultItemsChangeHandler();
 
 			//add sample
 			ViewModel.initSample();
 
 			gridCredential.IsEnabled = false;
+		}
+
+
+		private void registerVaultItemsChangeHandler()
+		{
+			var vault = ViewModel.Vault;
+			if (vault == null)
+				return;
+
+			vault.OnItemAdded += (sender, itemAdded) => lstTitle.Items.Add(itemAdded);
+			vault.OnItemRemoved += (sender, itemRemoved) => lstTitle.Items.Remove(itemRemoved);
+			vault.OnDisposed += (sender) => lstTitle.Items.Clear();
 		}
 
 		private void TxtSearchTitle_TextChanged(object sender, TextChangedEventArgs e)
@@ -110,40 +122,98 @@ namespace PassManager
 			((TextBox)sender).SelectAll(); //doesn't work, might be a bug.
 		}
 
-		private SaveFileDialog saveDialog = new SaveFileDialog() { Filter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault" };
+		private static readonly string dialogFilter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault";
 		private void MenuNew_Click(object sender, RoutedEventArgs e)
 		{
-			saveDialog.ShowDialog();
+			try
+			{
+				var saveDialog = new SaveFileDialog();
+				saveDialog.Filter = dialogFilter;
+				saveDialog.ShowDialog();
+				if (saveDialog.SafeFileName == "")
+					return;
+
+				var passwordDialog = new PasswordDialog(this);
+				passwordDialog.ShowDialog();
+				if (!passwordDialog.IsOk)
+					return;
+				ViewModel.EncryptAndSaveVault(saveDialog.FileName, passwordDialog.txtPassword.Password, ViewModel.Vault);
+				loadVault(saveDialog.FileName, passwordDialog.txtPassword.Password);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error!: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}
+
+		private void loadVault(string path, string password)
+		{
+			ViewModel.LoadVault(path, password);
+
+			registerVaultItemsChangeHandler();
+			ViewModel.Vault.pushAllItemsToHandlers();
 		}
 		private void menuOpen_Click(object sender, RoutedEventArgs e)
 		{
-			OpenFileDialog openDialog = new OpenFileDialog() { Filter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault" };
-			openDialog.ShowDialog();
-			if (openDialog.SafeFileName == "")
-				return;
-			var passwordDialog = new PasswordDialog(this);
-			passwordDialog.ShowDialog();
-			if (!passwordDialog.IsOk)
-				return;
+			try
+			{
+				OpenFileDialog openDialog = new OpenFileDialog() { Filter = dialogFilter };
+				openDialog.ShowDialog();
+				if (openDialog.SafeFileName == "")
+					return;
+				var passwordDialog = new PasswordDialog(this);
+				passwordDialog.ShowDialog();
+				if (!passwordDialog.IsOk)
+					return;
 
-			bool hasLoaded = ViewModel.loadVault(openDialog.FileName, passwordDialog.txtPassword.Password);
-			if (!hasLoaded)
-				MessageBox.Show("Cannot open vault", "Decryption Fail", MessageBoxButton.OK, MessageBoxImage.Stop);
-
+				loadVault(openDialog.FileName, passwordDialog.txtPassword.Password);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Stop);
+			}
 		}
 
 		private void MenuSave_Click(object sender, RoutedEventArgs e)
 		{
-			using (var dialog = new PasswordDialog(this))
+			try
 			{
+				using (var dialog = new PasswordDialog(this))
+				{
+					dialog.ShowDialog();
+					if (!dialog.IsOk)
+						return;
 
-				dialog.ShowDialog();
+					ViewModel.EncryptAndSaveVault(ViewModel.VaultPath, dialog.txtPassword.Password, ViewModel.Vault);
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Stop);
 			}
 		}
 
 		private void MenuExit_Click(object sender, RoutedEventArgs e)
 		{
 			Close();
+		}
+		private void MenuChangePassword_Click(object sender, RoutedEventArgs e)
+		{
+			try
+			{
+				//using (var dialog = new PasswordDialog(this))
+				//{
+				//	dialog.ShowDialog();
+				//	if (!dialog.IsOk)
+				//		return;
+
+				//	ViewModel.ChangeVaultPasswordThenEncryptAndSave(ViewModel.LoadedVaultPath, dialog.txtPassword.Password, newPassword, ViewModel.Vault);
+				//}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Stop);
+			}
 		}
 
 		private void LstTitle_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -154,25 +224,10 @@ namespace PassManager
 			if (SelectedItemState.HasUnsavedChanges())
 				flushUnsavedCredentialChanges();
 
-			SelectedCredential = (Credential)lstTitle.SelectedItem;
+			SelectedItemState.Item = (Credential)lstTitle.SelectedItem;
 			setEditable(false);
-			log($"selected Credential.Id: {SelectedCredential.Id}");
+			log($"selected Credential.Id: {SelectedItemState.Item.Id}");
 		}
-		private void displaySelectedCredential(Credential c)
-		{
-			if (c == null)
-			{
-				log("error: selected credential is Null, cannot display.");
-				return;
-			}
-
-			txtTitle.Text = c.Title;
-			txtUsername.Text = c.Username;
-			txtPassword.Text = new String(c.Password);
-			txtDescription.Text = c.Description;
-			SelectedItemState.ResetState();
-		}
-
 
 		private void flushUnsavedCredentialChanges()
 		{
@@ -189,7 +244,7 @@ namespace PassManager
 
 		private void setChangesToSelectedCredential()
 		{
-			Credential c = SelectedCredential;
+			Credential c = SelectedItemState.Item;
 			c.Title = txtTitle.Text.Trim();
 			c.Username = txtUsername.Text.Trim();
 			c.Password = txtPassword.Text.Trim().ToCharArray();
@@ -223,8 +278,10 @@ namespace PassManager
 						Description = ""
 					};
 					ViewModel.Vault.Add(newCredential);
+					newCredential.Id = ViewModel.Vault.LastAddedItemId();
 
-					newCredential.Id = ViewModel.Vault.LastAddedItemId;
+					lstTitle.Focus();
+					lstTitle.SelectedItem = newCredential;
 				}
 			}
 		}
@@ -259,8 +316,23 @@ namespace PassManager
 			else
 			{
 				chkEdit.Content = "Edit";
-				displaySelectedCredential(SelectedCredential);
+				displaySelectedCredential(SelectedItemState.Item);
 			}
+		}
+
+		private void displaySelectedCredential(Credential c)
+		{
+			if (c == null)
+			{
+				log("error: selected credential is Null, cannot display.");
+				return;
+			}
+
+			txtTitle.Text = c.Title;
+			txtUsername.Text = c.Username;
+			txtPassword.Text = new String(c.Password);
+			txtDescription.Text = c.Description;
+			SelectedItemState.ResetState();
 		}
 
 		private void TxtTitle_TextChanged(object sender, TextChangedEventArgs e)
@@ -289,87 +361,45 @@ namespace PassManager
 				SelectedItemState.HasEdited = true;
 		}
 
-
 		private static void log(object x)
 		{
-			Console.WriteLine(DateTime.UtcNow.Ticks + " " + x);
+			Debug.WriteLine(DateTime.UtcNow.Ticks + " : " + x);
 		}
 
 		private void BtnDelete_Click(object sender, RoutedEventArgs e)
 		{
-			int selectedIndex = lstTitle.SelectedIndex;
-			if (selectedIndex == -1)
+			if (SelectedItemState.Item == null)
 				return;
 
 			MessageBoxResult msgBoxResult = MessageBox.Show("Save unsaved changes to currently selected credential?", "Unsave Changes", MessageBoxButton.YesNo);
 			if (msgBoxResult != MessageBoxResult.Yes)
 				return;
 
-			log($"count before delete: { lstTitle.Items.Count}");
-			lstTitle.Items.RemoveAt(selectedIndex);
-			log($"count after delete: { lstTitle.Items.Count}");
+			log($"count before delete: { ViewModel.Vault.Count}");
+			ViewModel.Vault.Remove(SelectedItemState.Item?.Id.ToString());
+			log($"count after delete: { ViewModel.Vault.Count}");
 		}
 
-		private Clipboard clipboard = new Clipboard();
-		private class Clipboard
-		{
-			private CancellationTokenSource source = new CancellationTokenSource();
-			private string copiedValue = null;
-			private TaskCompletionSource<Clipboard> autoClear = new TaskCompletionSource<Clipboard>();
-			public int autoClearAfterMilliSecond { get; set; } = 15000;
-			private Thread task { get; set; } = new Thread(delegate () { });
-
-			public void Set(string text)
-			{
-				copiedValue = text;
-				System.Windows.Clipboard.SetData(DataFormats.Text, text);
-				task.Interrupt();
-				task = new Thread(delegate ()
-				{
-					try
-					{
-						Thread.Sleep(autoClearAfterMilliSecond);
-						Clear();
-					}
-					catch (ThreadInterruptedException)
-					{
-						//exit
-					}
-				});
-				task.SetApartmentState(ApartmentState.STA);
-				task.IsBackground = true;
-				task.Start();
-			}
-
-			public void Clear()
-			{
-				if (copiedValue == System.Windows.Clipboard.GetText())
-					System.Windows.Clipboard.Clear();
-				copiedValue = null;
-			}
-		}
 		private void BtnCopyUsername_Click(object sender, RoutedEventArgs e)
 		{
-			clipboard.Set(txtUsername.Text);
+			ViewModel.Clipboard.Set(txtUsername.Text);
 		}
 
 		private void BtnCopyPassword_Click(object sender, RoutedEventArgs e)
 		{
-			clipboard.Set(txtPassword.Text);
-			var x = btnCopyPassword.Content;
-			btnCopyPassword.Content = "-";
-			btnCopyPassword.Content = x;
+			ViewModel.Clipboard.Set(txtPassword.Text);
 		}
-
 
 		private void Window_Closing(object sender, CancelEventArgs e)
 		{
-			//eixt
+			ViewModel.Dispose();
 		}
 
 		private void GridCredential_LostFocus(object sender, RoutedEventArgs e)
 		{
 			log("##Edit lost focus!##");
 		}
+
+
 	}
 }

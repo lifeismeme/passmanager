@@ -89,12 +89,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ClipboardCleaner.cs" />
     <Compile Include="CredentialToTitle.cs" />
     <Compile Include="Credential.cs" />
     <Compile Include="DeletedCode.cs" />
     <Compile Include="InputDialog.xaml.cs">
       <DependentUpon>InputDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Logger.cs" />
     <Compile Include="PasswordDialog.xaml.cs">
       <DependentUpon>PasswordDialog.xaml</DependentUpon>
     </Compile>

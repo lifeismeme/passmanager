@@ -12,14 +12,17 @@
     <Grid>
         <ListBox x:Name="lstTitle" HorizontalAlignment="Left" Height="366" Margin="10,69,0,0" VerticalAlignment="Top" Width="200" SelectionChanged="LstTitle_SelectionChanged"/>
         <TextBox x:Name="txtSearchTitle" HorizontalAlignment="Left" Height="23" Margin="10,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" GotFocus="TxtSearchTitle_GotFocus" TextChanged="TxtSearchTitle_TextChanged" UndoLimit="20" Text="title" AutomationProperties.HelpText="Search Title" KeyUp="TxtSearchTitle_KeyUp"/>
-        <DockPanel HorizontalAlignment="Left" Height="21" LastChildFill="False" Margin="10,3,0,0" VerticalAlignment="Top" Width="644">
-            <Menu DockPanel.Dock="Top">
+        <DockPanel HorizontalAlignment="Left" Height="21" LastChildFill="False" Margin="10,3,0,0" VerticalAlignment="Top" Width="602">
+            <Menu DockPanel.Dock="Top" HorizontalAlignment="Right" Width="602">
                 <MenuItem Header="_File">
                     <MenuItem x:Name="menuNew" Header="_New" Click="MenuNew_Click" />
                     <MenuItem x:Name="menuOpen" Header="_Open" Click="menuOpen_Click" />
                     <MenuItem x:Name="menuSave" Header="_Save" Click="MenuSave_Click" />
                     <Separator />
                     <MenuItem x:Name="menuExit" Header="_Exit" Click="MenuExit_Click" />
+                </MenuItem>
+                <MenuItem Header="_Action">
+                    <MenuItem x:Name="menuChangePassword" Header="_Change Password" Click="MenuChangePassword_Click" />
                 </MenuItem>
             </Menu>
         </DockPanel>

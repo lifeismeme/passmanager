@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PassManager
 {
-	public class Credential : INotifyPropertyChanged, IComparable<Credential>
+	public class Credential : INotifyPropertyChanged, IComparable<Credential>, IDisposable
 	{
 		private int id;
 		private string title;
@@ -18,9 +18,17 @@ namespace PassManager
 		private DateTime creation;
 		private DateTime lastModified;
 
+
 		public Credential()
 		{
-			Creation = DateTime.Now;
+			DateTime now = DateTime.Now;
+			Id = 1;
+			Title = "";
+			Username = "";
+			Password = new char[0];
+			Description = "";
+			Creation = now;
+			LastModified = now;
 		}
 		public static Credential CreateNew()
 		{
@@ -60,13 +68,13 @@ namespace PassManager
 			var c = obj as Credential;
 			if (c == null)
 				return false;
-			return (c.Id == Id
+			return c.Id == Id
 				&& c.Title == Title
 				&& c.Username == username
 				&& Enumerable.SequenceEqual(c.Password, Password)
 				&& c.Description == Description
 				&& DateTime.Equals(c.Creation, Creation)
-				&& DateTime.Equals(c.LastModified, LastModified));
+				&& DateTime.Equals(c.LastModified, LastModified);
 		}
 
 		public override int GetHashCode()
@@ -81,6 +89,17 @@ namespace PassManager
 			hashCode *= -1521134295 + Creation.GetHashCode();
 			hashCode *= -1521134295 + LastModified.GetHashCode();
 			return hashCode;
+		}
+
+		public void Dispose()
+		{
+			if (password != null)
+			{
+				for (int i = 0; i < password.Length; ++i)
+				{
+					password[i] = '\0';
+				}
+			}
 		}
 
 		public int Id { get => id; set { id = Math.Abs(value); NotifyPropertyChanged(); } }

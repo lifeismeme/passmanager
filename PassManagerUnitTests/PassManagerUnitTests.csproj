@@ -52,7 +52,7 @@
     <Compile Include="CoreTests.cs" />
     <Compile Include="CredentialTests.cs" />
     <Compile Include="VaultTests.cs" />
-    <Compile Include="VaultWindowTests.cs" />
+    <Compile Include="ViewModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
