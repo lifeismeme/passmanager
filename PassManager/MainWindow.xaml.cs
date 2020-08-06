@@ -61,6 +61,16 @@ namespace PassManager
 			{
 				Debug.WriteLine(ex.ToString());
 			}
+
+			try
+			{
+				new VaultWindow().Show();
+			}
+			catch (Exception)
+			{
+
+				throw;
+			}
 		}
 
 		private void TxtDestPath_TextChanged(object sender, TextChangedEventArgs e)

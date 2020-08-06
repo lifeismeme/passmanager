@@ -185,5 +185,61 @@ namespace PassManagerUnitTests
 			Assert.IsTrue(password2.Length == len);
 			Assert.IsFalse(Enumerable.SequenceEqual(password, password2));
 		}
+
+
+		[TestMethod]
+		public void CalcPassStrength_PasswordByCharBase_PossibleComposition()
+		{
+			const string lower10 = "abcdefghij";
+			const string upper10 = "KLMNOPQRST";
+			const string digit10 = "0123456789";
+			const string symbols10 = @"!#\[',.""_-";
+			Assert.IsTrue(lower10.Length == 10);
+			Assert.IsTrue(upper10.Length == 10);
+			Assert.IsTrue(digit10.Length == 10);
+			Assert.IsTrue(symbols10.Length == 10);
+
+			double lower10Bits = Core.calcPasswordBits(lower10);
+			double upper10Bits = Core.calcPasswordBits(upper10);
+			double digit10Bits = Core.calcPasswordBits(digit10);
+			double symbolsBits = Core.calcPasswordBits(symbols10);
+
+			Assert.IsTrue(lower10Bits == Math.Log(Math.Pow(26, lower10.Length), 2));
+			Assert.IsTrue(upper10Bits == Math.Log(Math.Pow(26, upper10.Length), 2));
+			Assert.IsTrue(digit10Bits == Math.Log(Math.Pow(10, digit10.Length), 2));
+			Assert.IsTrue(symbolsBits == Math.Log(Math.Pow(32, symbols10.Length), 2));
+		}
+
+		[TestMethod]
+		public void CalcPassStrength_MixCharBase_PossibleComposition()
+		{
+			const string alphabet20 = "abcdefghijKLMNOPQRST";
+			const string digit10 = "0987654321";
+			const string symbols10 = @"\.""[]/^*(`";
+			Assert.IsTrue(alphabet20.Length == 20);
+			Assert.IsTrue(digit10.Length == 10);
+			Assert.IsTrue(symbols10.Length == 10);
+
+			const string alphanumeric30 = alphabet20 + digit10;
+			const string alphaSymbols30 = alphabet20 + symbols10;
+			const string alphaNumSymb40 = alphabet20 + digit10 + symbols10 + alphabet20;
+			const string digitSymbols20 = digit10 + symbols10;
+
+			//act
+			double bits_alphanumeric30 = Core.calcPasswordBits(alphanumeric30);
+			double bits_alphaSymbols30 = Core.calcPasswordBits(alphaSymbols30);
+			double bits_alphaNumSymb40 = Core.calcPasswordBits(alphaNumSymb40);
+			double bits_digitSymbols20 = Core.calcPasswordBits(digitSymbols20);
+
+			//assert
+			double bitForCharBase62 = Math.Log(Math.Pow(52 + 10, alphanumeric30.Length), 2);
+			double bitForCharBase84 = Math.Log(Math.Pow(52 + 32, alphaSymbols30.Length), 2);
+			double bitForCharBase94 = Math.Log(Math.Pow(52 + 10 + 32, alphaNumSymb40.Length), 2);
+			double bitForCharBase42 = Math.Log(Math.Pow(10 + 32, digitSymbols20.Length), 2);
+			Assert.IsTrue(bits_alphanumeric30 == bitForCharBase62);
+			Assert.IsTrue(bits_alphaSymbols30 == bitForCharBase84);
+			Assert.IsTrue(bits_alphaNumSymb40 == bitForCharBase94);
+			Assert.IsTrue(bits_digitSymbols20 == bitForCharBase42);
+		}
 	}
 }

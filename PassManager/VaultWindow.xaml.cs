@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace PassManager
@@ -28,7 +29,8 @@ namespace PassManager
 
 		private class SelectedItem<T>
 		{
-			public T Item { get; set; }
+			private T item;
+			public T Item { get => item; set { item = value; ResetState(); } }
 			public bool IsEditing { private get; set; } = false;
 			public bool HasEdited { private get; set; } = false;
 
@@ -125,6 +127,10 @@ namespace PassManager
 		private static readonly string dialogFilter = "Encrypted Vault (*.encryptedvault)|*.encryptedvault";
 		private void MenuNew_Click(object sender, RoutedEventArgs e)
 		{
+			if (SelectedItemState.HasUnsavedChanges())
+				flushUnsavedCredentialChanges();
+			setEditable(false);
+			clearDisplayedCredential();
 			try
 			{
 				var saveDialog = new SaveFileDialog();
@@ -146,15 +152,31 @@ namespace PassManager
 			}
 		}
 
+		private void clearDisplayedCredential()
+		{
+			txtTitle.Text = "";
+			txtUsername.Text = "";
+			txtPassword.Text = "";
+			txtDescription.Text = "";
+			SelectedItemState.ResetState();
+			SelectedItemState.Item = null;
+			lstTitle.SelectedIndex = -1;
+		}
+
 		private void loadVault(string path, string password)
 		{
 			ViewModel.LoadVault(path, password);
 
 			registerVaultItemsChangeHandler();
 			ViewModel.Vault.pushAllItemsToHandlers();
+			clearDisplayedCredential();
 		}
 		private void menuOpen_Click(object sender, RoutedEventArgs e)
 		{
+			if (SelectedItemState.HasUnsavedChanges())
+				flushUnsavedCredentialChanges();
+			setEditable(false);
+			clearDisplayedCredential();
 			try
 			{
 				OpenFileDialog openDialog = new OpenFileDialog() { Filter = dialogFilter };
@@ -176,6 +198,9 @@ namespace PassManager
 
 		private void MenuSave_Click(object sender, RoutedEventArgs e)
 		{
+			if (SelectedItemState.HasUnsavedChanges())
+				flushUnsavedCredentialChanges();
+			setEditable(false);
 			try
 			{
 				using (var dialog = new PasswordDialog(this))
@@ -199,16 +224,21 @@ namespace PassManager
 		}
 		private void MenuChangePassword_Click(object sender, RoutedEventArgs e)
 		{
+			if (SelectedItemState.HasUnsavedChanges())
+				flushUnsavedCredentialChanges();
+			setEditable(false);
 			try
 			{
-				//using (var dialog = new PasswordDialog(this))
-				//{
-				//	dialog.ShowDialog();
-				//	if (!dialog.IsOk)
-				//		return;
+				using (var dialog = new ChangePassword(this))
+				{
+					dialog.ShowDialog();
+					if (!dialog.IsOk)
+						return;
+					if (!dialog.IsNewPasswordsMatch)
+						return;
 
-				//	ViewModel.ChangeVaultPasswordThenEncryptAndSave(ViewModel.LoadedVaultPath, dialog.txtPassword.Password, newPassword, ViewModel.Vault);
-				//}
+					ViewModel.ChangeVaultPasswordThenEncryptAndSave(ViewModel.LoadedVaultPath, dialog.txtPasswordOld.Password, dialog.txtPasswordNew.Password, ViewModel.Vault);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -218,20 +248,33 @@ namespace PassManager
 
 		private void LstTitle_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
+			var titlelist = lstTitle;
+			var items = lstTitle.SelectedItems;
+			var selecteditemstate = SelectedItemState;
+			var vault = ViewModel.Vault;
+
+
+
 			if (lstTitle.SelectedIndex == -1)
 				return;
+
 
 			if (SelectedItemState.HasUnsavedChanges())
 				flushUnsavedCredentialChanges();
 
-			SelectedItemState.Item = (Credential)lstTitle.SelectedItem;
 			setEditable(false);
-			log($"selected Credential.Id: {SelectedItemState.Item.Id}");
+			SelectedItemState.Item = (Credential)lstTitle.SelectedItem;
+			//after saving by manually unchecking chkEdit, next selection will have 2 items, causing selected item to be stucked at previous
+			if (lstTitle.SelectedItems.Count > 1)
+				SelectedItemState.Item = (Credential)lstTitle.SelectedItems[lstTitle.SelectedItems.Count - 1];
+			//
+			displaySelectedCredential(SelectedItemState.Item);
+			Logger.Log($"selected Credential.Id: {SelectedItemState.Item.Id}");
 		}
 
 		private void flushUnsavedCredentialChanges()
 		{
-			MessageBoxResult msgBoxResult = MessageBox.Show("Set changes to currently editing credential?", "Unfinish edit", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No, MessageBoxOptions.ServiceNotification);
+			MessageBoxResult msgBoxResult = MessageBox.Show("Set unfinish changes to currently editing credential first?", "Unfinish edit", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No, MessageBoxOptions.ServiceNotification);
 			switch (msgBoxResult)
 			{
 				case MessageBoxResult.Yes:
@@ -249,7 +292,7 @@ namespace PassManager
 			c.Username = txtUsername.Text.Trim();
 			c.Password = txtPassword.Text.Trim().ToCharArray();
 			c.Description = txtDescription.Text.Trim();
-			log("set Changes to selected and modified Credential");
+			Logger.Log("set Changes to selected and modified Credential");
 		}
 
 		private void BtnAddNewCredential_Click(object sender, RoutedEventArgs e)
@@ -257,7 +300,7 @@ namespace PassManager
 			if (SelectedItemState.HasUnsavedChanges())
 			{
 				flushUnsavedCredentialChanges();
-				log($"has unsaved changes: {SelectedItemState.HasUnsavedChanges()}");
+				Logger.Log($"has unsaved changes: {SelectedItemState.HasUnsavedChanges()}");
 
 				SelectedItemState.ResetState();
 			}
@@ -270,9 +313,12 @@ namespace PassManager
 				dialog.ShowDialog();
 				if (dialog.IsOk)
 				{
+					string title = dialog.txtInput.Text.Trim();
+					if (title == "")
+						title = $"-New Title id ({ViewModel.Vault.Count})-";
 					var newCredential = new Credential()
 					{
-						Title = dialog.txtInput.Text.Trim() ?? $"-New Title id ({ViewModel.Vault.Count})-",
+						Title = title,
 						Username = "",
 						Password = new char[0],
 						Description = ""
@@ -288,6 +334,11 @@ namespace PassManager
 
 		private void ChkEdit_Click(object sender, RoutedEventArgs e)
 		{
+			var titlelist = lstTitle;
+			var items = lstTitle.SelectedItems;
+			var selecteditemstate = SelectedItemState;
+			var vault = ViewModel.Vault;
+
 			bool? isChecked = ((CheckBox)sender).IsChecked;
 			if (isChecked == true)
 			{
@@ -297,12 +348,13 @@ namespace PassManager
 			{
 				if (SelectedItemState.HasUnsavedChanges())
 				{
+					Logger.Log($"chkEdit clicked to uncheck, has unsaved changes");
 					flushUnsavedCredentialChanges();
-					log($"has unsaved changes: {SelectedItemState.HasUnsavedChanges()}");
 
 					SelectedItemState.ResetState();
 				}
 				setEditable(false);
+				displaySelectedCredential(SelectedItemState.Item);
 			}
 		}
 
@@ -314,17 +366,14 @@ namespace PassManager
 			if (isEnable)
 				chkEdit.Content = "Editing";
 			else
-			{
 				chkEdit.Content = "Edit";
-				displaySelectedCredential(SelectedItemState.Item);
-			}
 		}
 
 		private void displaySelectedCredential(Credential c)
 		{
 			if (c == null)
 			{
-				log("error: selected credential is Null, cannot display.");
+				Logger.Log("error: selected credential is Null, cannot display.");
 				return;
 			}
 
@@ -348,6 +397,24 @@ namespace PassManager
 		private void TxtPassword_TextChanged(object sender, TextChangedEventArgs e)
 		{
 			setCredentialHasChanged();
+
+			if (lblPasswordStrength != null )
+			{
+				string password = txtPassword.Text;
+				lblPasswordStrength.Visibility = Visibility.Visible;
+				double bits = Core.calcPasswordBits(password);
+				lblPasswordStrength.Content = string.Format("{0:F1} bits", bits);
+				if (bits > 64)
+					lblPasswordStrength.Foreground = Brushes.Green;
+				else if (bits > 48)
+					lblPasswordStrength.Foreground = Brushes.YellowGreen;
+				else if (bits > 40)
+					lblPasswordStrength.Foreground = Brushes.Orange;
+				else if (bits > 32)
+					lblPasswordStrength.Foreground = Brushes.OrangeRed;
+				else if (bits > 16)
+					lblPasswordStrength.Foreground = Brushes.Red;
+			}
 		}
 
 		private void TxtDescription_TextChanged(object sender, TextChangedEventArgs e)
@@ -361,23 +428,18 @@ namespace PassManager
 				SelectedItemState.HasEdited = true;
 		}
 
-		private static void log(object x)
-		{
-			Debug.WriteLine(DateTime.UtcNow.Ticks + " : " + x);
-		}
-
 		private void BtnDelete_Click(object sender, RoutedEventArgs e)
 		{
 			if (SelectedItemState.Item == null)
 				return;
 
-			MessageBoxResult msgBoxResult = MessageBox.Show("Save unsaved changes to currently selected credential?", "Unsave Changes", MessageBoxButton.YesNo);
-			if (msgBoxResult != MessageBoxResult.Yes)
-				return;
+			if (SelectedItemState.HasUnsavedChanges())
+				flushUnsavedCredentialChanges();
+			setEditable(false);
 
-			log($"count before delete: { ViewModel.Vault.Count}");
+			Logger.Log($"count before delete: { ViewModel.Vault.Count}");
 			ViewModel.Vault.Remove(SelectedItemState.Item?.Id.ToString());
-			log($"count after delete: { ViewModel.Vault.Count}");
+			Logger.Log($"count after delete: { ViewModel.Vault.Count}");
 		}
 
 		private void BtnCopyUsername_Click(object sender, RoutedEventArgs e)
@@ -397,7 +459,7 @@ namespace PassManager
 
 		private void GridCredential_LostFocus(object sender, RoutedEventArgs e)
 		{
-			log("##Edit lost focus!##");
+			Logger.Log("##Edit lost focus!##");
 		}
 
 

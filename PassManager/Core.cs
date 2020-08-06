@@ -2,7 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
-
+using System.Text.RegularExpressions;
 
 namespace PassManager
 {
@@ -178,6 +178,26 @@ namespace PassManager
 				}
 			}
 			return password;
+		}
+
+		public static double calcPasswordBits(string password)
+		{
+			Regex Lower = new Regex(@"[a-z]");
+			Regex Upper = new Regex(@"[A-Z]");
+			Regex Digit = new Regex(@"[0-9]");
+			Regex Symbol = new Regex(@"[\~\!\@\#\$\%\^\&\*\(\)_\+\|\{\}\:\""\<\>\?\`\-\=\\\[\]\;\'\,\.\/]");
+
+			int charBase = 0;
+			if (Lower.IsMatch(password))
+				charBase += 26;
+			if (Upper.IsMatch(password))
+				charBase += 26;
+			if (Digit.IsMatch(password))
+				charBase += 10;
+			if (Symbol.IsMatch(password))
+				charBase += 32;
+
+			return  Math.Log( Math.Pow(charBase, password.Length), 2);
 		}
 	}
 }
