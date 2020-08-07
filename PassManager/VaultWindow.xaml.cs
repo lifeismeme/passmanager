@@ -148,6 +148,7 @@ namespace PassManager
 			}
 			catch (Exception ex)
 			{
+				Logger.Log(ex);
 				MessageBox.Show($"Error!: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
@@ -192,6 +193,7 @@ namespace PassManager
 			}
 			catch (Exception ex)
 			{
+				Logger.Log(ex);
 				MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Stop);
 			}
 		}
@@ -214,6 +216,7 @@ namespace PassManager
 			}
 			catch (Exception ex)
 			{
+				Logger.Log(ex);
 				MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Stop);
 			}
 		}
@@ -227,6 +230,8 @@ namespace PassManager
 			if (SelectedItemState.HasUnsavedChanges())
 				flushUnsavedCredentialChanges();
 			setEditable(false);
+			displaySelectedCredential(SelectedItemState.Item);
+
 			try
 			{
 				using (var dialog = new ChangePassword(this))
@@ -248,26 +253,14 @@ namespace PassManager
 
 		private void LstTitle_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			var titlelist = lstTitle;
-			var items = lstTitle.SelectedItems;
-			var selecteditemstate = SelectedItemState;
-			var vault = ViewModel.Vault;
-
-
-
 			if (lstTitle.SelectedIndex == -1)
 				return;
-
 
 			if (SelectedItemState.HasUnsavedChanges())
 				flushUnsavedCredentialChanges();
 
 			setEditable(false);
 			SelectedItemState.Item = (Credential)lstTitle.SelectedItem;
-			//after saving by manually unchecking chkEdit, next selection will have 2 items, causing selected item to be stucked at previous
-			if (lstTitle.SelectedItems.Count > 1)
-				SelectedItemState.Item = (Credential)lstTitle.SelectedItems[lstTitle.SelectedItems.Count - 1];
-			//
 			displaySelectedCredential(SelectedItemState.Item);
 			Logger.Log($"selected Credential.Id: {SelectedItemState.Item.Id}");
 		}
@@ -275,24 +268,21 @@ namespace PassManager
 		private void flushUnsavedCredentialChanges()
 		{
 			MessageBoxResult msgBoxResult = MessageBox.Show("Set unfinish changes to currently editing credential first?", "Unfinish edit", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No, MessageBoxOptions.ServiceNotification);
-			switch (msgBoxResult)
-			{
-				case MessageBoxResult.Yes:
-					setChangesToSelectedCredential();
-					break;
-				case MessageBoxResult.No:
-					break;
-			}
-		}
 
-		private void setChangesToSelectedCredential()
-		{
-			Credential c = SelectedItemState.Item;
-			c.Title = txtTitle.Text.Trim();
-			c.Username = txtUsername.Text.Trim();
-			c.Password = txtPassword.Text.Trim().ToCharArray();
-			c.Description = txtDescription.Text.Trim();
-			Logger.Log("set Changes to selected and modified Credential");
+			if (msgBoxResult == MessageBoxResult.Yes)
+			{
+				//unselect first before modifying the item ListBox has ref to, 
+				//changes to underlying item result different GetHashCode, 
+				//where ListBox SelectItem ref no longer exists, and get stuck
+				lstTitle.SelectedIndex = -1;
+
+				Credential c = SelectedItemState.Item;
+				c.Title = txtTitle.Text.Trim();
+				c.Username = txtUsername.Text.Trim();
+				c.Password = txtPassword.Text.Trim().ToCharArray();
+				c.Description = txtDescription.Text.Trim();
+				Logger.Log("set Changes to selected and modified Credential");
+			}
 		}
 
 		private void BtnAddNewCredential_Click(object sender, RoutedEventArgs e)
@@ -354,6 +344,7 @@ namespace PassManager
 					SelectedItemState.ResetState();
 				}
 				setEditable(false);
+				lstTitle.SelectedItem = SelectedItemState.Item; // select back unselected item
 				displaySelectedCredential(SelectedItemState.Item);
 			}
 		}
@@ -364,9 +355,18 @@ namespace PassManager
 			gridCredential.IsEnabled = isEnable;
 			chkEdit.IsChecked = isEnable;
 			if (isEnable)
+			{
 				chkEdit.Content = "Editing";
+				txtPasswordHider.Visibility = Visibility.Hidden;
+				txtPassword.Visibility = Visibility.Visible;
+			}
 			else
+			{
 				chkEdit.Content = "Edit";
+				chkEdit.IsEnabled = lstTitle.SelectedItem != null;
+				txtPasswordHider.Visibility = Visibility.Visible;
+				txtPassword.Visibility = Visibility.Hidden;
+			}
 		}
 
 		private void displaySelectedCredential(Credential c)
@@ -382,6 +382,8 @@ namespace PassManager
 			txtPassword.Text = new String(c.Password);
 			txtDescription.Text = c.Description;
 			SelectedItemState.ResetState();
+
+			txtPasswordHider.Password = txtPassword.Text;
 		}
 
 		private void TxtTitle_TextChanged(object sender, TextChangedEventArgs e)
@@ -398,7 +400,7 @@ namespace PassManager
 		{
 			setCredentialHasChanged();
 
-			if (lblPasswordStrength != null )
+			if (lblPasswordStrength != null)
 			{
 				string password = txtPassword.Text;
 				lblPasswordStrength.Visibility = Visibility.Visible;
@@ -433,13 +435,17 @@ namespace PassManager
 			if (SelectedItemState.Item == null)
 				return;
 
-			if (SelectedItemState.HasUnsavedChanges())
-				flushUnsavedCredentialChanges();
-			setEditable(false);
-
-			Logger.Log($"count before delete: { ViewModel.Vault.Count}");
-			ViewModel.Vault.Remove(SelectedItemState.Item?.Id.ToString());
-			Logger.Log($"count after delete: { ViewModel.Vault.Count}");
+			MessageBoxResult msgBoxResult = MessageBox.Show("Confirm to delete this credential? This action cannot be undone", "Delete Credential", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No, MessageBoxOptions.ServiceNotification);
+			if (msgBoxResult == MessageBoxResult.Yes)
+			{
+				var c = SelectedItemState.Item;
+				clearDisplayedCredential();
+				setEditable(false);
+				
+				Logger.Log($"count before delete: { ViewModel.Vault.Count}");
+				ViewModel.Vault.Remove(c.Id.ToString());
+				Logger.Log($"count after delete: { ViewModel.Vault.Count}");
+			}
 		}
 
 		private void BtnCopyUsername_Click(object sender, RoutedEventArgs e)
@@ -461,7 +467,6 @@ namespace PassManager
 		{
 			Logger.Log("##Edit lost focus!##");
 		}
-
 
 	}
 }
