@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,6 +15,7 @@ namespace PassManager
 	/// 
 	public partial class VaultWindow : Window
 	{
+		private readonly string defaultTitle = "Password Manager =]";
 		private ViewModel ViewModel { get; set; } = new ViewModel();
 
 		private SelectedItem<Credential> SelectedItemState { get; set; } = new SelectedItem<Credential>();
@@ -127,21 +129,42 @@ namespace PassManager
 				var saveDialog = new SaveFileDialog();
 				saveDialog.Filter = dialogFilter;
 				saveDialog.ShowDialog();
-				if (saveDialog.SafeFileName == "")
+				if (saveDialog.SafeFileName == "") return;
+				if(File.Exists(saveDialog.FileName))
+				{
+					MessageBox.Show($"Cannot overwrite existing file: {saveDialog.SafeFileName}", "File exists", MessageBoxButton.OK, MessageBoxImage.Error);
 					return;
+				}
 
-				var passwordDialog = new PasswordDialog(this);
-				passwordDialog.ShowDialog();
-				if (!passwordDialog.IsOk)
-					return;
-				ViewModel.EncryptAndSaveVault(saveDialog.FileName, passwordDialog.txtPassword.Password, ViewModel.Vault);
-				loadVault(saveDialog.FileName, passwordDialog.txtPassword.Password);
+				using (var dialog = new ChangePassword(this))
+				{
+					//override the default GUI
+					dialog.txtPasswordOld.Password = "noNeedToFill";
+					dialog.txtPasswordOld.Visibility = Visibility.Hidden;
+					dialog.lblPasswordOld.Visibility = Visibility.Hidden;
+					dialog.Title = "New Vault";
+					dialog.lblMessage.Text = "Set a master password for the new vault";
+					dialog.txtPasswordNew.Focus();
+					dialog.ShowDialog();
+					if (!dialog.IsOk) return;
+					if (!dialog.IsNewPasswordsMatch) { Logger.Log("new passwords not match."); return; }
+					if (File.Exists(saveDialog.FileName))
+					{
+						MessageBox.Show($"Cannot overwrite existing file: {saveDialog.SafeFileName}", "File exists", MessageBoxButton.OK, MessageBoxImage.Error);
+						return;
+					}
+
+					ViewModel.EncryptAndSaveVault(saveDialog.FileName, dialog.txtPasswordNew.Password, new Vault<Credential>());
+					loadVault(saveDialog.FileName, dialog.txtPasswordNew.Password);
+					Title = $"{defaultTitle} : {saveDialog.SafeFileName}";
+				}
 			}
 			catch (Exception ex)
 			{
 				Logger.Log(ex);
 				MessageBox.Show($"Error!: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
+
 		}
 
 		private void clearDisplayedCredential()
@@ -157,11 +180,22 @@ namespace PassManager
 
 		private void loadVault(string path, string password)
 		{
-			ViewModel.LoadVault(path, password);
+			try
+			{
+				Visibility = Visibility.Hidden;
 
-			registerVaultItemsChangeHandler();
-			ViewModel.Vault.pushAllItemsToHandlers();
-			clearDisplayedCredential();
+				clearDisplayedCredential();
+				lstTitle.Items.Clear();
+
+				ViewModel.LoadVault(path, password);
+
+				registerVaultItemsChangeHandler();
+				ViewModel.Vault.pushAllItemsToHandlers();
+			}
+			finally
+			{
+				Visibility  = Visibility.Visible; //show refresh behaviour
+			}
 		}
 		private void menuOpen_Click(object sender, RoutedEventArgs e)
 		{
@@ -181,6 +215,7 @@ namespace PassManager
 					return;
 
 				loadVault(openDialog.FileName, passwordDialog.txtPassword.Password);
+				Title = $"{defaultTitle} {openDialog.SafeFileName}";
 			}
 			catch (Exception ex)
 			{
