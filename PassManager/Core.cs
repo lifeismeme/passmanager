@@ -158,12 +158,18 @@ namespace PassManager
 			return JsonSerializer.Deserialize<Vault<T>>(json);
 		}
 
-		public static byte[] generateRandomPassword(int length)
+		public static char[] generateRandomPassword(int length)
+		{
+			return System.Text.Encoding.ASCII.GetChars(generateRandomPasswordBytes(length));
+		}
+
+		public static byte[] generateRandomPasswordBytes(int length)
 		{
 			const int minPrintableASIIC = 33;
 			const int overPrintableASIIC = 127;
 			byte[] oneByte = new byte[1];
 			byte[] password = new byte[length];
+
 			using (RNGCryptoServiceProvider random = new RNGCryptoServiceProvider())
 			{
 				for (int i = 0; i < length; ++i)

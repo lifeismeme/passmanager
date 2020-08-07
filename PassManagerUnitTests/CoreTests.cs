@@ -166,19 +166,40 @@ namespace PassManagerUnitTests
 		}
 
 		[TestMethod]
+		public void GenerateRandomPasswordBytes_LengthN_RandomPrintableASCIIwithNcharacters()
+		{
+			const int len = 30;
+			const int minPrintableASIIC = 33;
+			const int maxPrintableASIIC = 126;
+
+			var password = Core.generateRandomPasswordBytes(len);
+			var password2 = Core.generateRandomPasswordBytes(len);
+			Debug.WriteLine(System.Text.Encoding.ASCII.GetString(password));
+
+			foreach (byte c in password)
+				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
+			foreach (byte c in password2)
+				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
+
+			Assert.IsTrue(password.Length == len);
+			Assert.IsTrue(password2.Length == len);
+			Assert.IsFalse(Enumerable.SequenceEqual(password, password2));
+		}
+
+		[TestMethod]
 		public void GenerateRandomPassword_LengthN_RandomPrintableASCIIwithNcharacters()
 		{
 			const int len = 30;
 			const int minPrintableASIIC = 33;
 			const int maxPrintableASIIC = 126;
 
-			var password = Core.generateRandomPassword(len);
-			var password2 = Core.generateRandomPassword(len);
-			Debug.WriteLine(System.Text.Encoding.ASCII.GetString(password));
+			char[] password = Core.generateRandomPassword(len);
+			char[] password2 = Core.generateRandomPassword(len);
+			Debug.WriteLine(new String(password));
 
-			foreach (byte c in password)
+			foreach (char c in password)
 				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
-			foreach (byte c in password2)
+			foreach (char c in password2)
 				Assert.IsTrue(c >= minPrintableASIIC && c <= maxPrintableASIIC);
 
 			Assert.IsTrue(password.Length == len);

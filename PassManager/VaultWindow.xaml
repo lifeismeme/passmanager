@@ -5,10 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PassManager"
         mc:Ignorable="d"
-        Title="VaultWindow" Height="509" Width="620.234" Closing="Window_Closing">
-    <Window.Resources>
-        <local:CredentialToTitle x:Key="CredentialToTitle"/>
-    </Window.Resources>
+        Title="Password Manager =]" Height="509" Width="620" Closing="Window_Closing" ResizeMode="CanMinimize">
+    
     <Grid>
         <ListBox x:Name="lstTitle" HorizontalAlignment="Left" Height="366" Margin="10,69,0,0" VerticalAlignment="Top" Width="200" SelectionChanged="LstTitle_SelectionChanged"  />
         <TextBox x:Name="txtSearchTitle" HorizontalAlignment="Left" Height="23" Margin="10,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" GotFocus="TxtSearchTitle_GotFocus" TextChanged="TxtSearchTitle_TextChanged" UndoLimit="20" Text="Search Title" AutomationProperties.HelpText="Search Title" KeyUp="TxtSearchTitle_KeyUp" MaxLength="128" ToolTip="Search title"/>
@@ -19,10 +17,11 @@
                     <MenuItem x:Name="menuOpen" Header="_Open" Click="menuOpen_Click" />
                     <MenuItem x:Name="menuSave" Header="_Save" Click="MenuSave_Click" />
                     <Separator />
-                    <MenuItem x:Name="menuExit" Header="_Exit" Click="MenuExit_Click" />
+                    <MenuItem x:Name="menuExit" Header="E_xit" Click="MenuExit_Click" />
                 </MenuItem>
                 <MenuItem Header="_Action">
                     <MenuItem x:Name="menuChangePassword" Header="_Change Password" Click="MenuChangePassword_Click" />
+                    <MenuItem x:Name="menuGeneratePassword" Header="_Generate Password" Click="MenuGeneratePassword_Click"  />
                 </MenuItem>
             </Menu>
         </DockPanel>
@@ -39,7 +38,7 @@
             <PasswordBox x:Name="txtPasswordHider" HorizontalAlignment="Left" Margin="25,129,0,0" VerticalAlignment="Top" Width="213" Grid.ColumnSpan="2" Height="23"/>
             <Label x:Name="lblPasswordStrength" Content="0.0 bits" HorizontalAlignment="Left" Margin="172,125,0,0" VerticalAlignment="Top" Background="#CCFFFFFF" Foreground="Red" Grid.ColumnSpan="2"/>
         </Grid>
-        <Button x:Name="btnAddNewCredential" Content="New" HorizontalAlignment="Left" Margin="10,440,0,0" VerticalAlignment="Top" Width="200" Click="BtnAddNewCredential_Click"/>
+        <Button x:Name="btnAddNewCredential" Content="_New" HorizontalAlignment="Left" Margin="10,440,0,0" VerticalAlignment="Top" Width="200" Click="BtnAddNewCredential_Click"/>
         <CheckBox x:Name="chkEdit" Content="Edit" HorizontalAlignment="Left" Margin="464,46,0,0" VerticalAlignment="Top" Click="ChkEdit_Click" ToolTip="Enable edit, uncheck to set changes" IsEnabled="False"/>
         <Button x:Name="btnCopyUsername" Content="Copy" HorizontalAlignment="Left" Margin="464,167,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyUsername_Click"/>
         <Button x:Name="btnCopyPassword" Content="Copy" HorizontalAlignment="Left" Margin="464,198,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyPassword_Click"/>

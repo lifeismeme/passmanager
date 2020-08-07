@@ -93,7 +93,6 @@
       <DependentUpon>ChangePassword.xaml</DependentUpon>
     </Compile>
     <Compile Include="ClipboardCleaner.cs" />
-    <Compile Include="CredentialToTitle.cs" />
     <Compile Include="Credential.cs" />
     <Compile Include="DeletedCode.cs" />
     <Compile Include="InputDialog.xaml.cs">
@@ -102,6 +101,9 @@
     <Compile Include="Logger.cs" />
     <Compile Include="PasswordDialog.xaml.cs">
       <DependentUpon>PasswordDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PasswordGenerator.xaml.cs">
+      <DependentUpon>PasswordGenerator.xaml</DependentUpon>
     </Compile>
     <Compile Include="Vault.cs" />
     <Compile Include="VaultConverter.cs" />
@@ -130,6 +132,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PasswordDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PasswordGenerator.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
