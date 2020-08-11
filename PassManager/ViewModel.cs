@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,7 +9,6 @@ namespace PassManager
 	public class ViewModel : IDisposable
 	{
 		public string LoadedVaultPath { get; private set; } = "";
-		public string VaultPath { get; set; }
 		public Vault<Credential> Vault { get; private set; }
 
 		public ViewModel()
@@ -163,7 +161,7 @@ namespace PassManager
 					throw new InvalidDataException("Invalid file, no data.");
 
 				var tempVault = JsonSerializer.Deserialize<Vault<Credential>>(vaultData);
-				VaultPath = path;
+				LoadedVaultPath = path;
 				Vault.Dispose();
 				Vault = tempVault;
 

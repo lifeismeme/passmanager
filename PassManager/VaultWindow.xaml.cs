@@ -173,6 +173,10 @@ namespace PassManager
 			txtUsername.Text = "";
 			txtPassword.Text = "";
 			txtDescription.Text = "";
+			lblDateCreated.Content = "Date Created:";
+			lblDateLastModified.Content = "Last Modified:";
+			lblDateCreated.ToolTip = "";
+			lblDateLastModified.ToolTip = "";
 			SelectedItemState.ResetState();
 			SelectedItemState.Item = null;
 			lstTitle.SelectedIndex = -1;
@@ -237,7 +241,7 @@ namespace PassManager
 					if (!dialog.IsOk)
 						return;
 
-					ViewModel.EncryptAndSaveVault(ViewModel.VaultPath, dialog.txtPassword.Password, ViewModel.Vault);
+					ViewModel.EncryptAndSaveVault(ViewModel.LoadedVaultPath, dialog.txtPassword.Password, ViewModel.Vault);
 				}
 			}
 			catch (Exception ex)
@@ -416,6 +420,10 @@ namespace PassManager
 			txtUsername.Text = c.Username;
 			txtPassword.Text = new String(c.Password);
 			txtDescription.Text = c.Description;
+			lblDateCreated.Content = $"Date Created: {c.Creation.ToString("dd-MMM-yy")}";
+			lblDateLastModified.Content = $"Last Modified: {c.LastModified.ToString("dd-MMM-yy HH:mm:ss")}";
+			lblDateCreated.ToolTip = c.Creation.ToString("dd-MMM-yy HH:mm:ss");
+			lblDateLastModified.ToolTip = c.LastModified.ToString("dd-MMM-yy HH:mm:ss");
 			SelectedItemState.ResetState();
 
 			txtPasswordHider.Password = txtPassword.Text;

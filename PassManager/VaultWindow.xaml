@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PassManager"
         mc:Ignorable="d"
         Title="Password Manager =]" Height="509" Width="620" Closing="Window_Closing" ResizeMode="CanMinimize">
-    
+
     <Grid>
         <ListBox x:Name="lstTitle" HorizontalAlignment="Left" Height="366" Margin="10,69,0,0" VerticalAlignment="Top" Width="200" SelectionChanged="LstTitle_SelectionChanged"  />
         <TextBox x:Name="txtSearchTitle" HorizontalAlignment="Left" Height="23" Margin="10,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" GotFocus="TxtSearchTitle_GotFocus" TextChanged="TxtSearchTitle_TextChanged" UndoLimit="20" Text="Search Title" AutomationProperties.HelpText="Search Title" KeyUp="TxtSearchTitle_KeyUp" MaxLength="128" ToolTip="Search title"/>
@@ -30,18 +30,20 @@
                 <ColumnDefinition Width="274*"/>
                 <ColumnDefinition Width="113*"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="txtTitle" HorizontalAlignment="Left" Height="23" Margin="25,33,0,0" TextWrapping="Wrap" Text="title" VerticalAlignment="Top" Width="279" Grid.ColumnSpan="2" TextChanged="TxtTitle_TextChanged" MaxLength="128" UndoLimit="20" ToolTip="Title name of a credential"/>
+            <TextBox x:Name="txtTitle" HorizontalAlignment="Left" Height="23" Margin="25,54,0,0" TextWrapping="Wrap" Text="title" VerticalAlignment="Top" Width="279" Grid.ColumnSpan="2" TextChanged="TxtTitle_TextChanged" MaxLength="128" UndoLimit="20" ToolTip="Title name of a credential"/>
             <TextBox x:Name="txtUsername" HorizontalAlignment="Left" Height="23" Margin="25,98,0,0" TextWrapping="Wrap" Text="uname" VerticalAlignment="Top" Width="213" TextChanged="TxtUsername_TextChanged" Grid.ColumnSpan="2" MaxLength="128" UndoLimit="20" ToolTip="username of this credential"/>
             <TextBox x:Name="txtPassword" HorizontalAlignment="Left" Height="23" Margin="25,129,0,0" TextWrapping="Wrap" Text="pass" VerticalAlignment="Top" Width="213" MaxLength="39" TextChanged="TxtPassword_TextChanged" Grid.ColumnSpan="2" UndoLimit="20" ToolTip="password of this credential"/>
             <TextBox x:Name="txtDescription" HorizontalAlignment="Left" Height="189" Margin="25,173,0,0" TextWrapping="Wrap" Text="description" VerticalAlignment="Top" Width="279" AcceptsReturn="True" AcceptsTab="True" Grid.ColumnSpan="2" TextChanged="TxtDescription_TextChanged" MaxLength="1024" ToolTip="description"/>
-            <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Left" VerticalAlignment="Top" Width="58" Margin="193,367,0,0" Click="BtnDelete_Click" Grid.ColumnSpan="2"/>
+            <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Left" VerticalAlignment="Top" Width="58" Margin="193,367,0,0" Click="BtnDelete_Click" Grid.ColumnSpan="2" ToolTip="Delete this"/>
             <PasswordBox x:Name="txtPasswordHider" HorizontalAlignment="Left" Margin="25,129,0,0" VerticalAlignment="Top" Width="213" Grid.ColumnSpan="2" Height="23"/>
             <Label x:Name="lblPasswordStrength" Content="0.0 bits" HorizontalAlignment="Left" Margin="172,125,0,0" VerticalAlignment="Top" Background="#CCFFFFFF" Foreground="Red" Grid.ColumnSpan="2"/>
         </Grid>
-        <Button x:Name="btnAddNewCredential" Content="_New" HorizontalAlignment="Left" Margin="10,440,0,0" VerticalAlignment="Top" Width="200" Click="BtnAddNewCredential_Click"/>
+        <Button x:Name="btnAddNewCredential" Content="Add _New" HorizontalAlignment="Left" Margin="10,440,0,0" VerticalAlignment="Top" Width="200" Click="BtnAddNewCredential_Click"/>
         <CheckBox x:Name="chkEdit" Content="Edit" HorizontalAlignment="Left" Margin="464,46,0,0" VerticalAlignment="Top" Click="ChkEdit_Click" ToolTip="Enable edit, uncheck to set changes" IsEnabled="False"/>
-        <Button x:Name="btnCopyUsername" Content="Copy" HorizontalAlignment="Left" Margin="464,167,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyUsername_Click"/>
-        <Button x:Name="btnCopyPassword" Content="Copy" HorizontalAlignment="Left" Margin="464,198,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyPassword_Click"/>
+        <Button x:Name="btnCopyUsername" Content="Copy" HorizontalAlignment="Left" Margin="464,167,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyUsername_Click" ToolTip="copy for 15 seconds"/>
+        <Button x:Name="btnCopyPassword" Content="Copy" HorizontalAlignment="Left" Margin="464,198,0,0" Width="75" Height="23" VerticalAlignment="Top" Click="BtnCopyPassword_Click" ToolTip="copy for 15 seconds"/>
+        <Label x:Name="lblDateCreated" Content="Date Created:" HorizontalAlignment="Left" Margin="246,69,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="lblDateLastModified" Content="Last Modified:" HorizontalAlignment="Left" Margin="246,91,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>
