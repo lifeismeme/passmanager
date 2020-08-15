@@ -113,7 +113,6 @@ namespace PassManager
 					csEncrypt.FlushFinalBlock();
 				}
 			}
-
 		}
 
 		private static void decrypt(Stream input, Stream output, byte[] Key, byte[] IV)

@@ -24,24 +24,25 @@ namespace PassManager
 			Vault.Add(new Credential
 			{
 				Id = 1,
-				Username = "hello world",
+				Username = "facebookuser",
 				Password = new char[] { 'B', 'B', 'C' },
-				Description = "good by.\nh",
-				Title = "o0o"
+				Description = "real facebook account",
+				Title = "facebook"
 			});
 			Vault.Add(new Credential
 			{
 				Id = 2,
+				Username = "theuser98",
 				Password = new char[] { 'A', 'b', 'a' },
-				Title = "pp"
+				Title = "linkedin"
 			});
 			Vault.Add(new Credential
 			{
 				Id = 3,
-				Username = "hello world",
+				Username = "niceuser",
 				Password = new char[] { 'x', 'x', 'C' },
-				Description = "goodcccc by.\nsh",
-				Title = "xAsd23 sd"
+				Description = "myspace account",
+				Title = "myspace"
 			});
 		}
 
@@ -147,6 +148,7 @@ namespace PassManager
 		{
 			try
 			{
+				LoadedVaultPath = "";
 				string vaultData = null;
 				using (var buffer = new MemoryStream())
 				{
@@ -161,7 +163,6 @@ namespace PassManager
 					throw new InvalidDataException("Invalid file, no data.");
 
 				var tempVault = JsonSerializer.Deserialize<Vault<Credential>>(vaultData);
-				LoadedVaultPath = path;
 				Vault.Dispose();
 				Vault = tempVault;
 

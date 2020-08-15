@@ -60,9 +60,62 @@ namespace PassManager
 			//add sample
 			ViewModel.initSample();
 
-			gridCredential.IsEnabled = false;
+			setEditable(false);
+
+			if (ViewModel.LoadedVaultPath == "")
+			{
+				menuSave.IsEnabled = false;
+				menuChangePassword.IsEnabled = false;
+			}
+
+			//placeholders
+			registerTxtPlaceholderShowHide();
 		}
 
+		private void registerTxtPlaceholderShowHide()
+		{
+
+			txtSearchTitle.TextChanged += (sender, e) =>
+			{
+				TextBox txtbox = (TextBox)sender;
+				if (txtbox.Text == "")
+					lblSearchTitle.Visibility = Visibility.Visible;
+				else
+					lblSearchTitle.Visibility = Visibility.Hidden;
+			};
+			txtTitle.TextChanged += (sender, e) =>
+			{
+				TextBox txtbox = (TextBox)sender;
+				if (txtbox.Text == "")
+					lblTitle.Visibility = Visibility.Visible;
+				else
+					lblTitle.Visibility = Visibility.Hidden;
+			};
+			txtUsername.TextChanged += (sender, e) =>
+			{
+				TextBox txtbox = (TextBox)sender;
+				if (txtbox.Text == "")
+					lblUsername.Visibility = Visibility.Visible;
+				else
+					lblUsername.Visibility = Visibility.Hidden;
+			};
+			txtPassword.TextChanged += (sender, e) =>
+			{
+				TextBox txtbox = (TextBox)sender;
+				if (txtbox.Text == "")
+					lblPassword.Visibility = Visibility.Visible;
+				else
+					lblPassword.Visibility = Visibility.Hidden;
+			};
+			txtDescription.TextChanged += (sender, e) =>
+			{
+				TextBox txtbox = (TextBox)sender;
+				if (txtbox.Text == "")
+					lblDescription.Visibility = Visibility.Visible;
+				else
+					lblDescription.Visibility = Visibility.Hidden;
+			};
+		}
 
 		private void registerVaultItemsChangeHandler()
 		{
@@ -130,7 +183,7 @@ namespace PassManager
 				saveDialog.Filter = dialogFilter;
 				saveDialog.ShowDialog();
 				if (saveDialog.SafeFileName == "") return;
-				if(File.Exists(saveDialog.FileName))
+				if (File.Exists(saveDialog.FileName))
 				{
 					MessageBox.Show($"Cannot overwrite existing file: {saveDialog.SafeFileName}", "File exists", MessageBoxButton.OK, MessageBoxImage.Error);
 					return;
@@ -198,7 +251,9 @@ namespace PassManager
 			}
 			finally
 			{
-				Visibility  = Visibility.Visible; //show refresh behaviour
+				Visibility = Visibility.Visible; //show refresh behaviour
+				menuSave.IsEnabled = (ViewModel.LoadedVaultPath != "");
+				menuChangePassword.IsEnabled = menuSave.IsEnabled;
 			}
 		}
 		private void menuOpen_Click(object sender, RoutedEventArgs e)
@@ -284,7 +339,7 @@ namespace PassManager
 
 		private void MenuGeneratePassword_Click(object sender, RoutedEventArgs e)
 		{
-			using(var dialog = new PasswordGenerator(this))
+			using (var dialog = new PasswordGenerator(this))
 			{
 				dialog.ShowDialog();
 			}
@@ -301,7 +356,7 @@ namespace PassManager
 			setEditable(false);
 			SelectedItemState.Item = (Credential)lstTitle.SelectedItem;
 			displaySelectedCredential(SelectedItemState.Item);
-			Logger.Log($"selected Credential.Id: {SelectedItemState.Item.Id}");
+			Logger.Log($"selected Credential.Id: {SelectedItemState.Item?.Id}");
 		}
 
 		private void flushUnsavedCredentialChanges()
@@ -309,19 +364,23 @@ namespace PassManager
 			MessageBoxResult msgBoxResult = MessageBox.Show("Set unfinish changes to currently editing credential first?", "Unfinish edit", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No, MessageBoxOptions.ServiceNotification);
 
 			if (msgBoxResult == MessageBoxResult.Yes)
-			{
-				//unselect first before modifying the item ListBox has ref to, 
-				//changes to underlying item result different GetHashCode, 
-				//where ListBox SelectItem ref no longer exists, and get stuck
-				lstTitle.SelectedIndex = -1;
+				setChangesToCredential();
+		}
 
-				Credential c = SelectedItemState.Item;
-				c.Title = txtTitle.Text.Trim();
-				c.Username = txtUsername.Text.Trim();
-				c.Password = txtPassword.Text.Trim().ToCharArray();
-				c.Description = txtDescription.Text.Trim();
-				Logger.Log("set Changes to selected and modified Credential");
-			}
+		private void setChangesToCredential()
+		{
+			//unselect first before modifying the item ListBox has ref to, 
+			//changes to underlying item result different GetHashCode, 
+			//where ListBox SelectItem ref no longer exists, and get stuck
+			lstTitle.SelectedIndex = -1;
+
+			Credential c = SelectedItemState.Item;
+			c.Title = txtTitle.Text.Trim();
+			c.Username = txtUsername.Text.Trim();
+			c.Password = txtPassword.Text.Trim().ToCharArray();
+			c.Description = txtDescription.Text.Trim();
+
+			Logger.Log("set Changes to selected and modified Credential");
 		}
 
 		private void BtnAddNewCredential_Click(object sender, RoutedEventArgs e)
@@ -398,6 +457,7 @@ namespace PassManager
 				chkEdit.Content = "Editing";
 				txtPasswordHider.Visibility = Visibility.Hidden;
 				txtPassword.Visibility = Visibility.Visible;
+				btnSave.Visibility = Visibility.Visible;
 			}
 			else
 			{
@@ -405,6 +465,7 @@ namespace PassManager
 				chkEdit.IsEnabled = lstTitle.SelectedItem != null;
 				txtPasswordHider.Visibility = Visibility.Visible;
 				txtPassword.Visibility = Visibility.Hidden;
+				btnSave.Visibility = Visibility.Hidden;
 			}
 		}
 
@@ -484,7 +545,7 @@ namespace PassManager
 				var c = SelectedItemState.Item;
 				clearDisplayedCredential();
 				setEditable(false);
-				
+
 				Logger.Log($"count before delete: { ViewModel.Vault.Count}");
 				ViewModel.Vault.Remove(c.Id.ToString());
 				Logger.Log($"count after delete: { ViewModel.Vault.Count}");
@@ -509,6 +570,39 @@ namespace PassManager
 		private void GridCredential_LostFocus(object sender, RoutedEventArgs e)
 		{
 			Logger.Log("##Edit lost focus!##");
+		}
+
+		private void LblSearchTitle_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			txtSearchTitle.Focus();
+		}
+
+		private void LblTitle_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			txtTitle.Focus();
+		}
+
+		private void LblUsername_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			txtUsername.Focus();
+		}
+
+		private void LblPassword_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			txtPassword.Focus();
+		}
+
+		private void LblDescription_MouseDown(object sender, MouseButtonEventArgs e)
+		{
+			txtDescription.Focus();
+		}
+
+		private void BtnSave_Click(object sender, RoutedEventArgs e)
+		{
+			setChangesToCredential();
+			setEditable(false);
+			SelectedItemState.ResetState();
+			lstTitle.SelectedItem = SelectedItemState.Item;
 		}
 	}
 }

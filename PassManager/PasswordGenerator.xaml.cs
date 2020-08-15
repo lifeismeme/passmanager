@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace PassManager
 {
@@ -43,17 +44,19 @@ namespace PassManager
 			{
 				lblErrorMessage.Visibility = Visibility.Visible;
 				lblErrorMessage.Content = "must be 4 or above";
+				btnGenerate.IsEnabled = false;
 			}
 
 			else if (passLen > 39)
 			{
 				lblErrorMessage.Visibility = Visibility.Visible;
 				lblErrorMessage.Content = "number is too big";
-
+				btnGenerate.IsEnabled = false;
 			}
 			else
 			{
 				lblErrorMessage.Visibility = Visibility.Hidden;
+				btnGenerate.IsEnabled = true;
 			}
 		}
 		private void TxtLen_TextChanged(object sender, TextChangedEventArgs e)
@@ -86,6 +89,33 @@ namespace PassManager
 		{
 			txtPassword.Text = "";
 			Close();
+		}
+
+		private void TxtPassword_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			if (lblPasswordStrength != null)
+			{
+				string password = txtPassword.Text;
+				lblPasswordStrength.Visibility = Visibility.Visible;
+				double bits = Core.calcPasswordBits(password);
+				lblPasswordStrength.Content = string.Format("{0:F1} bits", bits);
+				if (bits > 64)
+					lblPasswordStrength.Foreground = Brushes.Green;
+				else if (bits > 48)
+					lblPasswordStrength.Foreground = Brushes.YellowGreen;
+				else if (bits > 40)
+					lblPasswordStrength.Foreground = Brushes.Orange;
+				else if (bits > 32)
+					lblPasswordStrength.Foreground = Brushes.OrangeRed;
+				else if (bits > 16)
+					lblPasswordStrength.Foreground = Brushes.Red;
+			}
+		}
+
+		private void TxtLen_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+		{
+			if (e.Key == System.Windows.Input.Key.Escape)
+				txtLen.Text = "";
 		}
 	}
 }
